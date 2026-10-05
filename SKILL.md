@@ -52,17 +52,18 @@ Gmail is Jan's personal mailbox: only pick up invoices that belong to Hyperscout
 
 ## Jan's view
 
-Jan reads the books on the web page "Hyperscout Holding Books" (https://claude.ai/artifact/QavbZk2mRUsVtPgaH2UGEJ, source books.html in the repo). It reads the ledger live and writes: answers in Vragen!D, rows in 'Notities Jan', and the KvK number in Instellingen!B7. Invoices he uploads there land in Inbox with names ending in `_ontbrekend`. Put this page link in every message to Jan, next to the books folder link. Keep the ledger layout stable: the page depends on the tab names and columns below.
+Jan reads the books on the web page "Hyperscout Holding Books" (https://claude.ai/artifact/QavbZk2mRUsVtPgaH2UGEJ, source books.html in the repo). It reads the ledger live and writes: answers in Vragen!D, rows in 'Notities Jan', the KvK number in Instellingen!B7, and the invoice audit (see Gevonden). On the page Jan previews each found invoice (Gmail RAW, parsed in the browser), files it ("Correct": the page saves the PDF, or the receipt mail as .html, to the month's Inkoop folder, sets Gevonden U Goedgekeurd and V the Drive id, and Boekingen H factuurnr, I Gematcht, M Drive id), rejects it (U Afgewezen), uploads the right one (U Vervangen), uploads a PDF for any missing payment himself (new Gevonden row, U Handmatig), and removes or replaces a filed one (old file to Drive bin, U Verwijderd, booking back to Factuur ontbreekt). Put this page link in every message to Jan, next to the books folder link. Keep the ledger layout stable: the page depends on the tab names and columns below.
 
 ## The ledger (Hyperscout Holding books ledger)
 
 Never write into columns that hold an ARRAYFORMULA (marked "formula" below), not even blanks. Write rows from the first empty row, in blocks that skip those columns. Dates as yyyy-mm-dd. Amounts as numbers in euro.
 
 - **Dashboard** (gid 0, Jan's view): link to the books folder, quarter picker (B5), BTW position and deadline, revenue/costs/result, actions for Jan, month folder links. Formulas only, never write here (except B5 when Jan asks for another quarter).
-- **Boekingen** (gid 1), one row per bank or card line: A Datum · B Bron (Wise, Amex, Memoriaal) · C Referentie (bank ref or Amex line ID) · D Tegenpartij · E Omschrijving · F Bedrag (€, + in, − out, gross as on bank/card) · G Grootboek (name from Grootboekschema!B) · H Factuurnr · I Status (Gematcht, Factuur ontbreekt, Niet nodig, Vraag, Eerder verwerkt = Q1/Q2 2026 already filed by Serdal) · J Kwartaal (formula) · K Maand (formula) · L Notitie. Write A:I, then L.
+- **Boekingen** (gid 1), one row per bank or card line: A Datum · B Bron (Wise, Amex, Memoriaal) · C Referentie (bank ref or Amex line ID) · D Tegenpartij · E Omschrijving · F Bedrag (€, + in, − out, gross as on bank/card) · G Grootboek (name from Grootboekschema!B) · H Factuurnr · I Status (Gematcht, Factuur ontbreekt, Niet nodig, Vraag, Eerder verwerkt = Q1/Q2 2026 already filed by Serdal) · J Kwartaal (formula) · K Maand (formula) · L Notitie · M Bestand (Drive id of the filed invoice, written by the page). Write A:I, then L:M.
 - **Facturen in** (gid 2), purchase invoices: A Factuurdatum · B Factuurnr · C Leverancier · D Land (ISO) · E Op naam Hyperscout (Ja, Nee) · F Netto € · G Btw-tarief (21%, 9%, 0%, verlegd EU, verlegd buiten EU, geen btw) · H Btw op factuur € · I Verlegde btw (formula) · J Rubriek (5b, 4a, 4b, geen) · K Aftrekbaar (Ja, Nee) · L Bruto (formula) · M Grootboek · N Betaald via (Wise, Amex, Nog niet betaald) · O Betaald op · P Bestand (link to the file in its month folder) · Q Kwartaal (formula) · R Valuta · S Bedrag in valuta · T Notitie. Write A:H, J:K, M:P, R:T.
 - **Facturen uit** (gid 3), sales invoices: A Factuurdatum · B Factuurnr · C Klant · D Land · E Btw-nummer klant · F Netto € · G Btw-tarief (21%, 9%, 0%, verlegd) · H Btw € · I Bruto (formula) · J Rubriek (1a, 1b, 3a, 3b, buiten EU) · K Vervaldatum · L Betaald op · M Status (formula: Open, Te laat, Betaald) · N Bestand · O Kwartaal (formula) · P Valuta · Q Bedrag in valuta · R Notitie. Write A:H, J:L, N, P:R.
 - **Vragen** (gid 11): A Nr · B question (English, for Jan) · C amount · D Jan's answer (from the web page) · E status (formula) · F asked on. Read answers every run, apply them, and add new questions here instead of only in chat.
+- **Gevonden** (gid 13), invoices found in the mailboxes, waiting for Jan's check: A Boeking-rij (row in Boekingen) · B Betaaldatum · C Tegenpartij · D Bedrag bank · E Bron (Gmail, Outlook, Handmatig) · F Gmail-ID · G Outlook-ID · H Afzender · I Onderwerp · J Maildatum · K Bijlage (exact PDF filename to save; empty = the mail itself is the receipt) · L Factuurnr · M Factuurdatum · N Valuta · O Netto · P Btw · Q Btw-soort · R Op naam · S Zekerheid (high, medium, low) · T Controle-notitie (what Jan must know: wrong name or VAT number, private name, foreign VAT) · U Status (Te controleren, Doorsturen of uploaden, Goedgekeurd, Afgewezen, Vervangen, Handmatig, Verwijderd) · V Bestand (Drive id) · W Map (Inkoop folder id of the payment month). One row per booking; never add a second open row for a booking. Never touch rows Jan decided (U Goedgekeurd, Afgewezen, Vervangen, Handmatig, Verwijderd), except to read them.
 - **Notities Jan** (gid 12): notes and upload records Jan leaves on the web page per supplier (A date · B counterparty · C note · D processed). Read every run; write "ja" in D once handled.
 - **Ontbrekend** (gid 4): formula list of every Boekingen row with status "Factuur ontbreekt". Never write. An item disappears when you set that row to Gematcht.
 - **Amex declaraties** (gid 5): formulas. B5 = still owed to Jan.
@@ -100,15 +101,17 @@ Covers the previous calendar month (M).
 2. **Bank and card.** Wise statement CSV for M from Inbox (Wise "statement" CSV preferred, PDF accepted). Amex xlsx for M from Inbox or Jan's old folder (file names like "amex September.xlsx"). Copy or move both into M/Bank and M/Amex. No Wise statement: ask Jan and continue with the rest.
 3. **Skip what is booked.** Read Boekingen!C:C and Facturen in!B:C. Never book a reference or invoice number twice.
 4. **Invoices.**
-   - Drive: Inbox and Jan's old folder with subfolders, files created or changed since the last run (Run log).
-   - Outlook and Gmail: messages in M and the two weeks after, with an attachment and words such as factuur, invoice, rekening, receipt, bon, nota, fattura, credit note, plus every counterparty name on M's Wise and Amex lines. Hyperscout business only.
-   - Read each document. Copy it to M/Inkoop or M/Verkoop (by invoice date) with the standard name. Add it to Facturen in or Facturen uit with the rules above, P/N = the Drive link.
+   - Drive: Inbox and Jan's old folder with subfolders, files created or changed since the last run (Run log). Sales invoices go straight to M/Verkoop and Facturen uit.
+   - **Purchase invoices: find, then Jan checks.** For every Boekingen row with I = Factuur ontbreekt (this month and earlier) that has no open Gevonden row, search BOTH mailboxes: Gmail (janbrabers@gmail.com) and Outlook (brabers@techinfashion.nl). Search the counterparty name and its billing senders (Stripe receipts come from invoice+statements@…) with invoice, receipt, factuur, fattura, nota, from ~10 days before to ~5 days after the payment. Match on amount (original currency on the Wise line) and invoice number. Hyperscout business only.
+   - Gmail find: get_message RAW (large results land in a file; parse with python's email module) and read the PDF with pdftotext to fill L to R and T. Check the name and VAT number on the invoice against Hyperscout Holding B.V. / NL869407260B01 and write any mismatch in T. Add a Gevonden row with U Te controleren, K = the invoice PDF's exact filename (prefer "Invoice…" over "Receipt…"), W = M's Inkoop id.
+   - Outlook find: the connector cannot forward or export mails with attachments. Tag the mail with the Outlook category "Hyperscout factuur" (outlook_batch_modify_labels) and add a Gevonden row with U Doorsturen of uploaden. Jan forwards tagged mails to Gmail or uploads the PDF on the page. Next run, look in Gmail for the forwarded copy (from brabers@techinfashion.nl, subject starts "FW:" or "Fwd:") and turn the row into Te controleren with the Gmail id.
+   - Never file a found invoice yourself: Jan files it on the page. After Jan's check, read Gevonden: for every Goedgekeurd, Vervangen or Handmatig row whose booking has no Facturen in row yet, read the file in V (download_file_content / read_file_content), add it to Facturen in with the rules above (P = https://drive.google.com/file/d/<V>/view), and fill Betaald via / Betaald op.
 5. **Book.** Every Wise and Amex line of M gets a Boekingen row. Grootboek from Grootboekschema hints. Match to its invoice: H = invoice number, I = Gematcht, and fill Betaald via / Betaald op in Facturen in (or Betaald op in Facturen uit). No invoice found: I = Factuur ontbreekt. Bank fees, interest, transfers between own Wise accounts (Kruisposten), Amex repayments to Jan, BTW payments: I = Niet nodig.
-6. **Earlier gaps.** For every row still "Factuur ontbreekt" from earlier months, search again; set Gematcht when found.
+6. **Earlier gaps.** Rows still "Factuur ontbreekt" from earlier months are covered by step 4. A row Jan rejected (Afgewezen) may be searched again only for a different mail.
 7. **Check.** Read Dashboard!A4:C26 and BTW per kwartaal for the current quarter. Scan the bank lines for anything Belastingdienst sent or took.
 8. **Report.** Read the tabs into data.json, run the script (`--type month --period M`), upload the PDF to M/Rapporten (create_file, application/pdf, base64Content, disableConversionToGoogleType true).
 9. **Log.** Add a Run log row.
-10. **Tell Jan** (SendUserMessage in scheduled runs), in this order: missing invoices (counterparty, date, amount, where it might be); BTW position this quarter and the deadline; anything due (assessment, reminder, fine found in the mail); Amex owed to Jan; your questions; then the link to the books folder. Send the PDF with SendUserFile.
+10. **Tell Jan** (SendUserMessage in scheduled runs), in this order: how many found invoices wait for his check on the page, and how many sit in Outlook; missing invoices (counterparty, date, amount, where it might be); BTW position this quarter and the deadline; anything due (assessment, reminder, fine found in the mail); Amex owed to Jan; your questions; then the link to the books folder. Send the PDF with SendUserFile.
 
 ## Quarterly run
 
@@ -125,7 +128,7 @@ Covers the previous calendar month (M).
 ## Reports
 
 Read with get_values and save to `/tmp/acc_data.json`:
-- `boekingen`: Boekingen!A1:L
+- `boekingen`: Boekingen!A1:M
 - `facturen_in`: 'Facturen in'!A1:T
 - `facturen_uit`: 'Facturen uit'!A1:R
 - `amex_owed`: 'Amex declaraties'!B5
@@ -153,7 +156,8 @@ Answer from the ledger, with numbers, in a few lines. Show the sum when you comb
 
 - KvK number (Instellingen!B7). Confirm the btw-id on a Hyperscout invoice.
 - Serdal: confirm the Grootboekschema numbers, how he wants services to non-EU customers shown, and whether the Excel format works for him.
-- Gmail connector: until connected, say each run that janbrabers@gmail.com was not checked.
+- Anthropic and Wispr bill "Hyperscout" with VAT number NL199636370B04, not the Holding's NL869407260B01; some Anthropic invoices are to "Jan's Individual Org". Until fixed, their BTW is not deductible: Facturen in E Nee, K Nee.
+- Privium Plus is invoiced to Jan privately: business or private?
 
 ## Report script (write to /tmp/acc_report.py exactly)
 

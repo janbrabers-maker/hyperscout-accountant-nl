@@ -74,6 +74,21 @@ tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
 .banner.err{background:var(--red-bg)}
 .sec-err{font-size:.86rem;color:var(--red)}
 .skeleton{color:var(--muted);font-size:.9rem}
+.flag{font-size:.86rem;background:var(--amber-bg);border-radius:8px;padding:8px 10px}
+.facts{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.86rem;color:var(--muted)}
+.facts b{color:var(--fg);font-weight:500}
+.pv{border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:10px;display:grid;gap:10px;max-height:720px;overflow:auto}
+.pv canvas{width:100%;height:auto;background:#fff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pv iframe{width:100%;height:560px;border:0;background:#fff;border-radius:4px}
+.rowlist{display:grid;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rowlist>div{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;padding:9px 12px;border-top:1px solid var(--line);min-width:0}
+.rowlist>div:first-child{border-top:0}
+.rowlist .l{min-width:0;flex:1 1 260px;overflow-wrap:anywhere}
+.rowlist .a{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn.sm{min-height:30px;padding:4px 10px;font-size:.82rem}
+.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,var(--line))}
+details>summary{cursor:pointer}
+a.pill{text-decoration:none}
 @media (prefers-reduced-motion:no-preference){.btn,.months a{transition:border-color .15s}}
 </style>
 
@@ -108,10 +123,21 @@ tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
     <div class="todo" id="questions"><div class="skeleton">Loading…</div></div>
   </section>
 
+  <section class="panel" aria-labelledby="auH">
+    <div class="panel-head">
+      <h2 id="auH">Invoices found: check them</h2>
+      <span class="small muted" id="auCount"></span>
+    </div>
+    <div class="small muted">Found in your mailboxes and matched to a payment. Look at each one: file it if it is right, reject it if not, or upload the right one. Nothing goes into the books until you file it.</div>
+    <div class="todo" id="audit"><div class="skeleton">Loading…</div></div>
+    <div id="outlookBox"></div>
+    <div id="filedBox"></div>
+  </section>
+
   <section class="panel" aria-labelledby="todoH">
     <div class="panel-head">
       <h2 id="todoH">Missing invoices</h2>
-      <span class="small muted">Per supplier. Upload the invoices or leave a note; both are picked up on the next run.</span>
+      <span class="small muted">Per supplier. Upload an invoice next to its payment, or leave a note for the next run.</span>
     </div>
     <div class="todo" id="todo"><div class="skeleton">Loading the books…</div></div>
   </section>
@@ -153,9 +179,11 @@ tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
 <script>
 const SHEET = "1-LHvR11t71ykKXCkyJd6b6NcsFYfKYHPo94Xu8PmMck";
 const INBOX = "1JHihwK8HiVOlFSf6l6fwg1KZgzGtW_0H";
-const SHEETS = "Google Sheets", DRIVE = "Google Drive";
+const SHEETS = "Google Sheets", DRIVE = "Google Drive", GMAIL = "Gmail";
+const G = {row:0,date:1,cp:2,amt:3,src:4,gid:5,oid:6,from:7,subj:8,mdate:9,att:10,nr:11,idate:12,cur:13,net:14,vat:15,vtype:16,naam:17,conf:18,note:19,status:20,file:21,folder:22};
+const FILED = ["Goedgekeurd","Vervangen","Handmatig"];
 const RANGES = {
-  boek: "Boekingen!A1:L", fin: "'Facturen in'!A1:T", fuit: "'Facturen uit'!A1:R",
+  boek: "Boekingen!A1:M", gev: "Gevonden!A1:W", fin: "'Facturen in'!A1:T", fuit: "'Facturen uit'!A1:R",
   btw: "'BTW per kwartaal'!A1:I18", mappen: "Mappen!A1:B", inst: "Instellingen!A1:C16",
   amex: "'Amex declaraties'!A3:B6", log: "'Run log'!A1:G", vragen: "Vragen!A1:F"
 };
@@ -213,7 +241,7 @@ function render(){
   const sel = $("quarter"); const cur = sel.value || defaultQuarter();
   if (qs.length){ sel.innerHTML = qs.map(q=>`<option ${q===cur?"selected":""}>${esc(q)}</option>`).join(""); }
   const q = sel.value || cur;
-  renderStrip(q); renderQuestions(); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
+  renderStrip(q); renderQuestions(); renderAudit(); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
 }
 
 function btwCol(q){ const hdr=((S.data.btw||[])[1]||[]); return hdr.indexOf(q); }
@@ -226,10 +254,10 @@ function renderStrip(q){
   const d=deadline(q), days=Math.ceil((d - new Date(new Date().toDateString()))/864e5);
   $("kDue").textContent = d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
   $("kDueHint").textContent = days<0?`${-days} days ago`:days===0?"today":`${days} days left`;
-  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt");
+  const miss = rows("boek",13).filter(x=>x.r[8]==="Factuur ontbreekt");
   $("kMiss").textContent = S.errs.boek?"–":String(miss.length);
   $("kMissHint").textContent = miss.length? eur0(-miss.reduce((a,x)=>a+num(x.r[5]),0))+" without invoice" : "all bookings have an invoice";
-  const all = rows("boek",12);
+  const all = rows("boek",13);
   const amexBooked = all.some(x=>x.r[1]==="Amex");
   const repaid = -all.filter(x=>x.r[1]==="Wise"&&x.r[6]==="R/C Jan Brabers").reduce((a,x)=>a+num(x.r[5]),0);
   if (!amexBooked){ $("kAmex").textContent = S.errs.boek?"–":eur0(repaid); $("kAmexLbl").textContent="Amex repaid to you"; $("kAmexHint").textContent="this year; Amex statements not booked yet"; }
@@ -254,28 +282,77 @@ function renderQuestions(){
 function renderTodo(){
   const box=$("todo");
   if (S.errs.boek){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</div>`; return; }
-  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt");
+  const miss = rows("boek",13).filter(x=>x.r[8]==="Factuur ontbreekt");
   const groups = {};
   for (const x of miss){ const k=(x.r[6]==="Management fee")?"Brabers Tech (management fee)":x.r[3].trim(); (groups[k]=groups[k]||[]).push(x); }
   S.groups = groups;
   const list = Object.entries(groups).sort((a,b)=>a[1].reduce((s,x)=>s+num(x.r[5]),0)-b[1].reduce((s,x)=>s+num(x.r[5]),0));
   const notHs = rows("fin",20).filter(x=>x.r[4]==="Nee");
+  const gv = {}; for (const x of gevRows()) if (!["Afgewezen","Verwijderd"].includes(x.r[G.status])) gv[x.r[G.row]] = x.r[G.status];
+  const tag = b => gv[b]==="Te controleren" ? ` <span class="pill amber">found, check above</span>` : gv[b]==="Doorsturen of uploaden" ? ` <span class="pill amber">in Outlook</span>` : "";
   let html = list.map(([name,xs],gi)=>{ const tot=xs.reduce((s,x)=>s+num(x.r[5]),0); xs.sort((a,b)=>a.r[0]<b.r[0]?-1:1);
     const span = xs.length>1? `${xs[0].r[0]} to ${xs[xs.length-1].r[0]}` : xs[0].r[0];
+    const pays = `<div class="rowlist">${xs.map(x=>`<div data-b="${x.row}"><span class="l"><span class="num">${esc(x.r[0])}</span> · ${esc(x.r[4])} · <span class="num">${eur(num(x.r[5]))}</span>${tag(String(x.row))}<span class="status" id="bst-${x.row}" aria-live="polite"></span></span>
+        <span class="a"><span class="btn sm file-label">Upload invoice<input type="file" accept=".pdf,image/*" data-act="bfile" aria-label="Upload the invoice for the ${esc(x.r[0])} payment to ${esc(name)}"></span></span></div>`).join("")}</div>`;
     return `<div class="item" data-g="${gi}">
       <div class="top"><span class="who">${esc(name)}</span><span class="amt num">${eur(tot)}</span></div>
       <div class="small muted">${xs.length} payment${xs.length>1?"s":""} · ${esc(span)} · ${esc(xs[0].r[6])}</div>
-      <details><summary class="small" style="cursor:pointer">Show payments</summary><div class="tbl-wrap"><table><tbody>${xs.map(x=>`<tr><td class="num">${esc(x.r[0])}</td><td>${esc(x.r[4])}</td><td class="r">${eur(num(x.r[5]))}</td></tr>`).join("")}</tbody></table></div></details>
+      ${xs.length<=3 ? pays : `<details><summary class="small">Show the ${xs.length} payments</summary><div style="margin-top:8px">${pays}</div></details>`}
       <div class="act">
         <input type="text" id="gnote-${gi}" placeholder="Note, e.g. personal cost, or where the invoices are" aria-label="Note for ${esc(name)}">
         <button class="btn" type="button" data-act="gnote">Save note</button>
-        <span class="btn file-label">Upload invoices<input type="file" multiple id="gfile-${gi}" accept=".pdf,image/*" data-act="gfile" aria-label="Upload invoices for ${esc(name)}"></span>
       </div>
       <div class="status" id="gst-${gi}" aria-live="polite"></div>
     </div>`; }).join("");
   S.groupNames = list.map(([n])=>n);
   html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in Hyperscout's name</span><span class="amt num">${eur(num(r[7]))} BTW</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask for a corrected invoice addressed to Hyperscout Holding B.V., or this BTW cannot be reclaimed.</div></div>`; }).join("");
   box.innerHTML = html || `<div class="empty">Nothing missing. Every payment has its invoice.</div>`;
+}
+
+function gevRows(){ return (S.data.gev||[]).slice(1).map((r,i)=>({r:(r.concat(Array(23).fill(""))).slice(0,23), row:i+2})).filter(x=>x.r[0]); }
+function gevByRow(row){ return gevRows().find(x=>String(x.row)===String(row)); }
+function inkoopFor(date){ const m=(S.data.mappen||[]).find(r=>r[0]===String(date).slice(0,7)); return (m&&m[4])||INBOX; }
+const money=(cur,v)=>v===""||v==null?"":(cur==="EUR"?"€ ":cur+" ")+num(v).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function renderAudit(){
+  const box=$("audit");
+  if (S.errs.gev){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.gev,SHEETS))}</div>`; $("outlookBox").innerHTML=""; $("filedBox").innerHTML=""; return; }
+  const g=gevRows();
+  const pend=g.filter(x=>x.r[G.status]==="Te controleren").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
+  const outl=g.filter(x=>x.r[G.status]==="Doorsturen of uploaden").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
+  const filed=g.filter(x=>FILED.includes(x.r[G.status])&&x.r[G.file]).sort((a,b)=>a.r[G.date]<b.r[G.date]?1:-1);
+  $("auCount").textContent = `${pend.length} to check · ${outl.length} in Outlook · ${filed.length} filed`;
+  box.innerHTML = pend.map(x=>{ const r=x.r;
+    const facts=[r[G.nr]&&`Invoice <b>${esc(r[G.nr])}</b>`, r[G.idate]&&`dated <b>${esc(r[G.idate])}</b>`,
+      r[G.net]!==""&&`net <b>${esc(money(r[G.cur],r[G.net]))}</b>`, r[G.vat]!==""&&num(r[G.vat])?`BTW <b>${esc(money(r[G.cur],r[G.vat]))}</b>`:"",
+      r[G.vtype]&&`<b>${esc(r[G.vtype])}</b>`, r[G.naam]&&`to <b>${esc(r[G.naam])}</b>`].filter(Boolean).join("<span>·</span>");
+    const kind = r[G.att] ? `PDF: ${esc(r[G.att])}` : "no PDF, the mail itself is the receipt";
+    return `<div class="item amber" data-gv="${x.row}">
+      <div class="top"><span class="who">${esc(r[G.cp])}</span><span class="amt num">${eur(num(r[G.amt]))}</span></div>
+      <div class="small muted">Paid ${esc(r[G.date])} · mail ${esc(r[G.mdate])} from ${esc(r[G.from])} · ${kind}${r[G.conf]&&r[G.conf]!=="high"?` · <span class="pill amber">${r[G.conf]==="low"?"weak match":"likely match"}</span>`:""}</div>
+      ${facts?`<div class="facts">${facts}</div>`:""}
+      ${r[G.note]?`<div class="flag">${esc(r[G.note])}</div>`:""}
+      <div class="act">
+        <button class="btn" type="button" data-act="pv">Show invoice</button>
+        <a class="btn" href="https://mail.google.com/mail/u/0/#all/${encodeURIComponent(r[G.gid])}" target="_blank" rel="noopener">Open mail ↗</a>
+        <button class="btn primary" type="button" data-act="ok">Correct, file it</button>
+        <button class="btn" type="button" data-act="no">Wrong one</button>
+        <span class="btn file-label">Upload the right one<input type="file" accept=".pdf,image/*" data-act="rep" aria-label="Upload the right invoice for ${esc(r[G.cp])}"></span>
+      </div>
+      <div class="pv" id="pv-${x.row}" hidden></div>
+      <div class="status" id="ast-${x.row}" aria-live="polite"></div>
+    </div>`; }).join("") || `<div class="empty">Nothing to check. New finds appear here after each run.</div>`;
+
+  $("outlookBox").innerHTML = outl.length ? `<div style="display:grid;gap:8px"><h3 style="margin:6px 0 0;font:600 .95rem var(--display)">In your Outlook (${outl.length})</h3>
+    <div class="small muted">These invoices are in brabers@techinfashion.nl, tagged with the orange category "Hyperscout factuur". Outlook does not let me pull the PDFs out. Either forward them to janbrabers@gmail.com (filter on the category, select all, forward) and they show up above after the next run, or drop each PDF here.</div>
+    <div class="rowlist">${outl.map(x=>{const r=x.r; return `<div data-gv="${x.row}"><span class="l"><b>${esc(r[G.cp])}</b> · <span class="num">${esc(r[G.date])}</span> · <span class="num">${eur(num(r[G.amt]))}</span><div class="small muted">${esc(r[G.subj])}${r[G.att]?` · ${esc(r[G.att])}`:""}</div>${r[G.note]&&!/^PDF zit in Outlook/.test(r[G.note])?`<div class="small">${esc(r[G.note].replace(/ ?PDF zit in Outlook.*$/,""))}</div>`:""}<span class="status" id="ast-${x.row}" aria-live="polite"></span></span>
+      <span class="a"><span class="btn sm file-label">Upload PDF<input type="file" accept=".pdf,image/*" data-act="ofile" aria-label="Upload the ${esc(r[G.cp])} invoice"></span></span></div>`}).join("")}</div></div>` : "";
+
+  $("filedBox").innerHTML = filed.length ? `<details><summary class="small">Filed invoices (${filed.length}): view, replace or remove</summary>
+    <div class="rowlist" style="margin-top:8px">${filed.map(x=>{const r=x.r; return `<div data-gv="${x.row}"><span class="l"><b>${esc(r[G.cp])}</b> · <span class="num">${esc(r[G.date])}</span> · <span class="num">${eur(num(r[G.amt]))}</span>${r[G.nr]?` · ${esc(r[G.nr])}`:""} <span class="pill grey">${r[G.status]==="Handmatig"?"uploaded by you":r[G.status]==="Vervangen"?"replaced":"from mail"}</span><span class="status" id="ast-${x.row}" aria-live="polite"></span></span>
+      <span class="a"><a class="btn sm" href="https://drive.google.com/file/d/${encodeURIComponent(r[G.file])}/view" target="_blank" rel="noopener">View ↗</a>
+      <span class="btn sm file-label">Replace<input type="file" accept=".pdf,image/*" data-act="frep" aria-label="Replace the ${esc(r[G.cp])} invoice"></span>
+      <button class="btn sm danger" type="button" data-act="rm">Remove</button></span></div>`}).join("")}</div></details>` : "";
 }
 
 function renderBtw(q){
@@ -296,7 +373,7 @@ function renderResult(q){
   if (S.errs.fuit||S.errs.boek){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.fuit||S.errs.boek,SHEETS))}</td></tr></tbody>`; return; }
   const ms=qMonths(q), y=q.slice(0,4), last=ms[2];
   const inQ=d=>ms.includes(d.slice(0,7)), ytd=d=>d.slice(0,4)===y && d.slice(0,7)<=last;
-  const fuit=rows("fuit",18), bk=rows("boek",12);
+  const fuit=rows("fuit",18), bk=rows("boek",13);
   const rev=f=>fuit.filter(x=>f(x.r[0])).reduce((a,x)=>a+num(x.r[5]),0);
   const cost=(f,acc)=>bk.filter(x=>f(x.r[0])&&acc.includes(x.r[6])).reduce((a,x)=>a+num(x.r[5]),0);
   const other=COST_ACCOUNTS.filter(a=>!["Management fee","Rente","Bankkosten"].includes(a));
@@ -311,14 +388,14 @@ function renderResult(q){
 function renderBookings(){
   const t=$("bkTbl"), msel=$("month");
   if (S.errs.boek){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</td></tr></tbody>`; return; }
-  const all=rows("boek",12); const months=[...new Set(all.map(x=>x.r[0].slice(0,7)))].sort().reverse();
+  const all=rows("boek",13); const months=[...new Set(all.map(x=>x.r[0].slice(0,7)))].sort().reverse();
   const cur=msel.value;
   msel.innerHTML=`<option value="">All months</option>`+months.map(m=>`<option ${m===cur?"selected":""}>${m}</option>`).join("");
   const list=all.filter(x=>!msel.value||x.r[0].startsWith(msel.value)).sort((a,b)=>a.r[0]<b.r[0]?1:-1);
   if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No bookings yet. Drop the Wise statements (CSV) in the Inbox and ask Claude to book them.</td></tr></tbody>`; return; }
-  const pill=s=>s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:s==="Vraag"?`<span class="pill amber">question</span>`:s==="Eerder verwerkt"?`<span class="pill grey">filed by Serdal</span>`:`<span class="pill grey">no invoice needed</span>`;
+  const pill=(s,f)=>s==="Gematcht"&&f?`<a class="pill green" href="https://drive.google.com/file/d/${encodeURIComponent(f)}/view" target="_blank" rel="noopener">invoice ↗</a>`:s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:s==="Vraag"?`<span class="pill amber">question</span>`:s==="Eerder verwerkt"?`<span class="pill grey">filed by Serdal</span>`:`<span class="pill grey">no invoice needed</span>`;
   t.innerHTML=`<thead><tr><th>Date</th><th>Source</th><th>Counterparty</th><th>Account</th><th class="r">Amount</th><th>Invoice</th></tr></thead><tbody>`+
-    list.map(x=>{const r=x.r;return `<tr><td class="num">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[3])}<div class="small muted">${esc(r[4])}</div></td><td class="small">${esc(r[6])}</td><td class="r">${eur(num(r[5]))}</td><td>${pill(r[8])}</td></tr>`}).join("")+`</tbody>`;
+    list.map(x=>{const r=x.r;return `<tr><td class="num">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[3])}<div class="small muted">${esc(r[4])}</div></td><td class="small">${esc(r[6])}</td><td class="r">${eur(num(r[5]))}</td><td>${pill(r[8],r[12])}</td></tr>`}).join("")+`</tbody>`;
 }
 
 function renderMonths(){
@@ -369,24 +446,150 @@ async function saveGroupNote(gi){
   catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
 }
 function toB64(buf){ let s=""; const b=new Uint8Array(buf); for (let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
-async function uploadGroup(gi, files){
-  const name=S.groupNames[gi], st=$("gst-"+gi); if (!files||!files.length) return;
-  const safe=s=>String(s||"").replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"-");
-  const done=[];
-  for (const file of files){
-    if (file.size > 15*1024*1024){ st.className="status err"; st.textContent=`${file.name} is larger than 15 MB. Save a smaller PDF and try again.`; continue; }
-    const title=`${today()}_${safe(name)}_ontbrekend_${safe(file.name)}`;
-    st.className="status"; st.textContent=`Uploading ${file.name}…`;
+// ---------- invoices: preview, file, reject, replace, remove
+const safe=s=>String(s||"").replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"-").slice(0,60);
+const extOf=(name,type)=>{ const m=String(name||"").match(/\.([A-Za-z0-9]{2,5})$/); return m?m[1].toLowerCase():(type==="text/html"?"html":type==="image/png"?"png":type==="image/jpeg"?"jpg":"pdf"); };
+function setSt(id,t,cls){ const el=$(id); if(!el) return; el.className="status"+(cls?" "+cls:""); el.textContent=t; }
+const busy=new Set();
+
+async function reloadBooks(){
+  await Promise.all(["gev","boek"].map(async k=>{ try{ const res=await S.mcp.callTool(SHEETS,"get_values",{spreadsheetId:SHEET,range:RANGES[k]},{cache:false}); S.data[k]=(res.payload&&res.payload.values)||[]; delete S.errs[k]; }catch(e){ S.errs[k]=e; } }));
+  render();
+}
+async function driveUpload(title, parent, blob, mime){
+  let content;
+  if (S.fileArgs && mime!=="text/html") content={$file:{data:blob,name:title,type:mime}};
+  else { if (blob.size>700*1024) throw {code:"too_big"}; content=toB64(await blob.arrayBuffer()); }
+  const res=await S.mcp.callTool(DRIVE,"create_file",{title,parentId:parent,contentMimeType:mime,base64Content:content,disableConversionToGoogleType:true});
+  const p=res.payload||{}; const id=p.id||(p.file&&p.file.id)||(p.files&&p.files[0]&&p.files[0].id);
+  if (!id) throw {code:"no_id"};
+  return id;
+}
+function upErr(e){
+  if (e?.code==="too_big") return "This view can only send files up to 700 KB. Save a smaller PDF, or drop it in the Inbox folder.";
+  if (e?.code==="no_id") return "Google Drive saved nothing it could point to. Check the month's Inkoop folder before trying again.";
+  if (e?.code==="server_unavailable"||e?.code==="upstream_error") return "No answer from Google Drive. Check the month's Inkoop folder before trying again, the file may have arrived.";
+  return errText(e,DRIVE);
+}
+// write the result into the books: found-tab row and the booking
+async function markFiled(gRow, status, fileId, bRow, nr){
+  if (gRow) await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${gRow}:V${gRow}`,values:[[status,fileId]]});
+  const b=rows("boek",13).find(x=>String(x.row)===String(bRow));
+  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!H${bRow}:I${bRow}`,values:[[nr||(b?b.r[7]:"")||"","Gematcht"]]});
+  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!M${bRow}`,values:[[fileId]]});
+}
+
+// Gmail RAW -> MIME parts (binary strings)
+function b64urlToBin(s){ s=s.replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; return atob(s); }
+function decodeWords(s){ return String(s).replace(/=\?([^?]+)\?([BQ])\?([^?]*)\?=/gi,(_,cs,enc,t)=>{ try{ const bin=enc.toUpperCase()==="B"?atob(t):t.replace(/_/g," ").replace(/=([0-9A-F]{2})/gi,(_,h)=>String.fromCharCode(parseInt(h,16)));
+  return new TextDecoder(cs).decode(Uint8Array.from(bin,c=>c.charCodeAt(0)&255)); }catch(_){ return t; } }); }
+function hparam(h,name){ if(!h) return "";
+  let m=h.match(new RegExp(name+"\\*=(?:[^']*'[^']*')?\"?([^;\"]+)","i")); if(m){ try{ return decodeURIComponent(m[1]); }catch(_){ return m[1]; } }
+  m=h.match(new RegExp("(?:^|[;\\s])"+name+"=\"([^\"]*)\"","i"))||h.match(new RegExp("(?:^|[;\\s])"+name+"=([^;\\s]+)","i")); return m?decodeWords(m[1]):""; }
+function parsePart(bin){
+  const m=bin.match(/\r?\n\r?\n/); const hEnd=m?m.index:bin.length;
+  const H={}; for (const line of bin.slice(0,hEnd).replace(/\r?\n[ \t]+/g," ").split(/\r?\n/)){ const i=line.indexOf(":"); if(i>0) H[line.slice(0,i).trim().toLowerCase()]=line.slice(i+1).trim(); }
+  const body=m?bin.slice(hEnd+m[0].length):""; const ct=H["content-type"]||"text/plain"; const bm=ct.match(/boundary="?([^";]+)"?/i);
+  if (/^multipart\//i.test(ct)&&bm){ const segs=body.split("--"+bm[1]); const out=[]; for (let i=1;i<segs.length;i++){ const s=segs[i]; if (s.startsWith("--")) break; out.push(...parsePart(s.replace(/^\r?\n/,""))); } return out; }
+  return [{H,ct,body}];
+}
+function partBytes(p){ const enc=(p.H["content-transfer-encoding"]||"").toLowerCase(); let b=p.body;
+  if (enc==="base64") b=atob(b.replace(/[^A-Za-z0-9+/=]/g,""));
+  else if (enc==="quoted-printable") b=b.replace(/=\r?\n/g,"").replace(/=([0-9A-F]{2})/gi,(_,h)=>String.fromCharCode(parseInt(h,16)));
+  const u=new Uint8Array(b.length); for (let i=0;i<b.length;i++) u[i]=b.charCodeAt(i)&255; return u; }
+S.msg = {};
+async function getMsg(x){
+  const id=x.r[G.gid]; if (S.msg[id]) return S.msg[id];
+  const res=await S.mcp.callTool(GMAIL,"get_message",{messageId:id,messageFormat:"RAW"},{cache:false});
+  let p=res.payload; if (typeof p==="string"){ try{ p=JSON.parse(p); }catch(_){ p={}; } }
+  if (!p||!p.raw) throw {code:"no_raw"};
+  const parts=parsePart(b64urlToBin(p.raw));
+  const files=parts.map(q=>({q,name:decodeWords(hparam(q.H["content-disposition"],"filename")||hparam(q.ct,"name"))})).filter(f=>f.name||/application\/pdf/i.test(f.q.ct));
+  const pdfs=files.filter(f=>/\.pdf$/i.test(f.name)||/application\/pdf/i.test(f.q.ct));
+  const want=x.r[G.att];
+  const pick=pdfs.find(f=>f.name===want)||pdfs.find(f=>/invoice|factuur|fattura/i.test(f.name))||pdfs[0];
+  let html=null; const hp=parts.find(q=>/^text\/html/i.test(q.ct)&&!/attachment/i.test(q.H["content-disposition"]||""));
+  if (hp){ try{ html=new TextDecoder(hparam(hp.ct,"charset")||"utf-8").decode(partBytes(hp)); }catch(_){ html=new TextDecoder().decode(partBytes(hp)); } }
+  const out={ pdf: pick?{bytes:partBytes(pick.q),name:pick.name||"invoice.pdf"}:null, html };
+  S.msg[id]=out; return out;
+}
+function mailErr(e){ return e?.code==="no_raw" ? "Gmail sent the mail back without its content. Use Open mail to look, then upload the PDF yourself." : errText(e,GMAIL); }
+
+let pdfjsP=null;
+function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>no(new Error("load")); document.head.appendChild(s); }); }
+function pdfjs(){ if (!pdfjsP) pdfjsP=(async()=>{ const base="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  await loadScript(base+"pdf.worker.min.js"); await loadScript(base+"pdf.min.js"); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc=base+"pdf.worker.min.js"; return lib; })(); return pdfjsP; }
+async function renderPdfInto(el, bytes){
+  const lib=await pdfjs(); const doc=await lib.getDocument({data:bytes.slice()}).promise; el.innerHTML="";
+  for (let i=1;i<=Math.min(doc.numPages,4);i++){ const pg=await doc.getPage(i); const vp=pg.getViewport({scale:1.6}); const c=document.createElement("canvas"); c.width=vp.width; c.height=vp.height; c.setAttribute("aria-label",`Invoice page ${i}`); el.appendChild(c); await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise; }
+  if (doc.numPages>4){ const d=document.createElement("div"); d.className="small muted"; d.textContent=`${doc.numPages-4} more page(s) not shown.`; el.appendChild(d); }
+}
+async function preview(row){
+  const x=gevByRow(row), el=$("pv-"+row); if (!x||!el) return;
+  if (!el.hidden){ el.hidden=true; return; }
+  el.hidden=false; el.innerHTML=`<div class="small muted">Fetching the mail…</div>`; setSt("ast-"+row,"");
+  let m; try{ m=await getMsg(x); }catch(e){ el.innerHTML=`<div class="sec-err">${esc(mailErr(e))}</div>`; return; }
+  if (m.pdf){ try{ await renderPdfInto(el,m.pdf.bytes); }catch(_){ el.innerHTML=`<div class="small">The preview could not draw this PDF (${esc(m.pdf.name)}). Use Open mail to look at it.</div>`; } }
+  else if (m.html){ el.innerHTML=""; const f=document.createElement("iframe"); f.setAttribute("sandbox",""); f.setAttribute("title","The receipt mail"); f.srcdoc=m.html; el.appendChild(f); }
+  else el.innerHTML=`<div class="small">No PDF or readable text in this mail. Use Open mail to look at it.</div>`;
+}
+async function approve(row){
+  const x=gevByRow(row); if (!x||busy.has(row)) return; busy.add(row); const r=x.r, sid="ast-"+row;
+  try{
+    setSt(sid,"Fetching the invoice from Gmail…");
+    let m; try{ m=await getMsg(x); }catch(e){ setSt(sid,mailErr(e),"err"); return; }
+    let blob, mime, ext;
+    if (m.pdf){ mime="application/pdf"; ext="pdf"; blob=new Blob([m.pdf.bytes],{type:mime}); }
+    else if (m.html){ mime="text/html"; ext="html"; blob=new Blob([m.html],{type:mime}); }
+    else { setSt(sid,"No PDF or receipt text in this mail. Upload the right one instead.","err"); return; }
+    const title=`${r[G.date]}_${safe(r[G.cp])}_${safe(r[G.nr]||"factuur")}.${ext}`;
+    setSt(sid,"Saving to the month's Inkoop folder…");
+    let id; try{ id=await driveUpload(title, r[G.folder]||inkoopFor(r[G.date]), blob, mime); }catch(e){ setSt(sid,upErr(e),"err"); return; }
+    try{ await markFiled(row,"Goedgekeurd",id,r[G.row],r[G.nr]); }catch(e){ setSt(sid,`Saved in Drive, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
+    setSt(sid,"Filed. The payment now has its invoice.","ok"); setTimeout(reloadBooks,900);
+  } finally { busy.delete(row); }
+}
+async function reject(row){
+  const x=gevByRow(row); if (!x) return; setSt("ast-"+row,"Saving…");
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${row}`,values:[["Afgewezen"]]});
+    setSt("ast-"+row,"Rejected. The payment stays on the missing list.","ok"); setTimeout(reloadBooks,900);
+  }catch(e){ setSt("ast-"+row,errText(e,SHEETS),"err"); }
+}
+// Jan uploads a file himself: for a found row (replace or Outlook) or for a booking without one
+async function uploadOwn(file, {gRow, bRow, status, oldFile, sid}){
+  if (!file) return; const key="u"+(gRow||bRow); if (busy.has(key)) return; busy.add(key);
+  try{
+    if (file.size>15*1024*1024){ setSt(sid,`${file.name} is larger than 15 MB. Save a smaller PDF and try again.`,"err"); return; }
+    const b=rows("boek",13).find(x=>String(x.row)===String(bRow)); const g=gRow?gevByRow(gRow):null;
+    const date=(g&&g.r[G.date])||(b&&b.r[0])||today(), cp=(g&&g.r[G.cp])||(b&&b.r[3])||"factuur", nr=(g&&g.r[G.nr])||(b&&b.r[7])||"";
+    const mime=file.type||"application/pdf";
+    const title=`${date}_${safe(cp)}_${safe(nr||"factuur")}.${extOf(file.name,mime)}`;
+    setSt(sid,`Uploading ${file.name}…`);
+    let id; try{ id=await driveUpload(title,(g&&g.r[G.folder])||inkoopFor(date),file,mime); }catch(e){ setSt(sid,upErr(e),"err"); return; }
     try{
-      let content;
-      if (S.fileArgs) content={$file:{data:file,name:title,type:file.type||"application/pdf"}};
-      else { if (file.size>700*1024){ st.className="status err"; st.textContent=`${file.name}: this view can only send files up to 700 KB. Drop it in the Inbox folder instead.`; continue; } content=toB64(await file.arrayBuffer()); }
-      await S.mcp.callTool(DRIVE,"create_file",{title,parentId:INBOX,contentMimeType:file.type||"application/pdf",base64Content:content,disableConversionToGoogleType:true});
-      done.push(title);
-    }catch(e){ st.className="status err"; st.textContent = (e?.code==="server_unavailable"||e?.code==="upstream_error") ? `No answer from Google Drive for ${file.name}. Check the Inbox before uploading again, it may have arrived.` : errText(e,DRIVE); }
-  }
-  if (done.length){ st.className="status ok"; st.textContent=`Uploaded ${done.length} file${done.length>1?"s":""} to the Inbox. Booked on the next run.`;
-    try{ await addNote(name, "Geüpload naar Inbox: "+done.join(", ")); }catch(_){} }
+      if (gRow) await markFiled(gRow,status,id,bRow,nr);
+      else {
+        await S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"Gevonden!A:W",values:[[Number(bRow),b?b.r[0]:"",b?b.r[3]:"",b?num(b.r[5]):"","Handmatig","","","","","",file.name,nr,"","","","","","","","Door Jan geüpload","Handmatig",id,inkoopFor(date)]]});
+        await markFiled(null,"Handmatig",id,bRow,nr);
+      }
+    }catch(e){ setSt(sid,`Saved in Drive, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
+    let msg="Filed. The payment now has its invoice.";
+    if (oldFile){ try{ await S.mcp.callTool(DRIVE,"trash_file",{fileId:oldFile}); msg="Replaced. The old file is in the Drive bin."; }catch(_){ msg="Replaced. The old file could not be moved to the bin; it is still in the Inkoop folder."; } }
+    setSt(sid,msg,"ok"); setTimeout(reloadBooks,900);
+  } finally { busy.delete(key); }
+}
+const armed=new Map();
+async function removeFiled(btn,row){
+  const x=gevByRow(row); if (!x) return; const sid="ast-"+row;
+  if (!armed.get(row)){ armed.set(row,true); btn.textContent="Sure? Remove"; setSt(sid,"Click again to remove this invoice. The payment goes back on the missing list."); setTimeout(()=>{ if(armed.get(row)){ armed.delete(row); btn.textContent="Remove"; setSt(sid,""); } },6000); return; }
+  armed.delete(row); btn.disabled=true; setSt(sid,"Removing…");
+  try{ await S.mcp.callTool(DRIVE,"trash_file",{fileId:x.r[G.file]}); }catch(e){ btn.disabled=false; btn.textContent="Remove"; setSt(sid,errText(e,DRIVE),"err"); return; }
+  try{
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${row}:V${row}`,values:[["Verwijderd",""]]});
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!I${x.r[G.row]}`,values:[["Factuur ontbreekt"]]});
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!M${x.r[G.row]}`,values:[[""]]});
+  }catch(e){ setSt(sid,`The file is in the Drive bin, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
+  setSt(sid,"Removed. Upload the right one under Missing invoices.","ok"); setTimeout(reloadBooks,900);
 }
 
 async function saveKvk(){
@@ -402,9 +605,24 @@ document.addEventListener("click", e=>{
   if (!S.mcp) return;
   const a=e.target.closest("[data-act=answer]"); if (a) return saveAnswer(a.closest("[data-qrow]").dataset.qrow);
   const g=e.target.closest("[data-act=gnote]"); if (g) return saveGroupNote(g.closest("[data-g]").dataset.g);
+  const act=e.target.closest("button[data-act]"); if (!act) return;
+  const gv=act.closest("[data-gv]"); const row=gv&&gv.dataset.gv;
+  if (act.dataset.act==="pv") return preview(row);
+  if (act.dataset.act==="ok") return approve(row);
+  if (act.dataset.act==="no") return reject(row);
+  if (act.dataset.act==="rm") return removeFiled(act,row);
 });
 document.addEventListener("change", e=>{
-  if (e.target.matches("input[data-act=gfile]") && S.mcp){ uploadGroup(e.target.closest("[data-g]").dataset.g, [...e.target.files]); e.target.value=""; }
+  const t=e.target;
+  if (S.mcp && t.matches("input[type=file][data-act]")){
+    const f=t.files&&t.files[0]; const a=t.dataset.act; t.value="";
+    if (a==="bfile"){ const b=t.closest("[data-b]").dataset.b; const found=gevRows().find(x=>String(x.r[G.row])===String(b)&&["Te controleren","Doorsturen of uploaden"].includes(x.r[G.status]));
+      uploadOwn(f,{gRow:found&&found.row,bRow:b,status:"Handmatig",sid:"bst-"+b}); }
+    else { const row=t.closest("[data-gv]").dataset.gv; const x=gevByRow(row); if (!x) return;
+      if (a==="rep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Vervangen",sid:"ast-"+row});
+      if (a==="ofile") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Handmatig",sid:"ast-"+row});
+      if (a==="frep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Vervangen",oldFile:x.r[G.file],sid:"ast-"+row}); }
+  }
   if (e.target.id==="quarter"){ render(); }
   if (e.target.id==="month"){ renderBookings(); }
 });
@@ -417,7 +635,7 @@ $("refresh").addEventListener("click", ()=>{ if (S.mcp) load(); });
   const mcp = await (window.claude?.use ? window.claude.use("mcp") : Promise.resolve(null));
   if (!mcp){
     showPage("Live data is only available when you open this page in Claude while signed in. The books themselves are in Google Drive: use All documents.", false);
-    for (const id of ["todo"]) $(id).innerHTML=`<div class="empty">Open this page in Claude to see what needs filling in.</div>`;
+    for (const id of ["todo","audit"]) $(id).innerHTML=`<div class="empty">Open this page in Claude to see what needs filling in.</div>`;
     return;
   }
   S.mcp = mcp;
