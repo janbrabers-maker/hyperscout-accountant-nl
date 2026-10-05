@@ -1,8 +1,8 @@
-<title>Hyperscout Holding Books</title>
+<title>Hyperscout Italia Books</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
-/* Layout: one column of working panels. Status strip first, then the to-do list, then BTW, result, bookings, folders. */
+/* Layout: one column of working panels. Status strip first, then the to-do lists, then IVA, result, bookings, deadlines, folders. */
 :root{
   --bg:#F7F5F1; --surface:#FFFFFF; --sunk:#EFE8DC; --fg:#14213D; --muted:#5D6375; --line:#E2DCD0;
   --accent:#14213D; --accent-fg:#FFFFFF; --red:#B8322A; --red-bg:#FBEAE8; --amber:#9A6412; --amber-bg:#FBF1DE; --green:#2E7A4C; --green-bg:#E5F3EA;
@@ -95,13 +95,13 @@ a.pill{text-decoration:none}
 <div class="wrap">
   <header>
     <div>
-      <h1>Hyperscout Holding Books</h1>
-      <div class="sub">Hyperscout Holding B.V., Den Haag · bookkeeping for Serdal · <span id="lastRun">last run: loading</span></div>
+      <h1>Hyperscout Italia Books</h1>
+      <div class="sub">Hyperscout Italia S.r.l., Taranto · bookkeeping for Rita (New Service) · <span id="lastRun">last run: loading</span></div>
     </div>
     <div class="controls">
       <label class="small muted" for="quarter">Quarter</label>
       <select id="quarter" aria-label="Quarter"></select>
-      <a class="btn" href="https://drive.google.com/drive/folders/1TcJNIfw5Ybe29HD_C4G95poffgnAVH5u" target="_blank" rel="noopener">All documents ↗</a>
+      <a class="btn" href="https://drive.google.com/drive/folders/1VuwpZBJPtvMx0Or72-SEkPtgdfVYzxhW" target="_blank" rel="noopener">All documents ↗</a>
       <button class="btn" id="refresh" type="button">Refresh</button>
     </div>
   </header>
@@ -109,10 +109,10 @@ a.pill{text-decoration:none}
   <div id="pageMsg" hidden></div>
 
   <section class="strip" aria-label="Summary">
-    <div><div class="lbl" id="btwLbl">BTW this quarter</div><div class="val" id="kBtw">–</div><div class="hint" id="kBtwHint">to pay (+) or get back (−)</div></div>
-    <div><div class="lbl">Deadline</div><div class="val" id="kDue">–</div><div class="hint" id="kDueHint">return and payment</div></div>
+    <div><div class="lbl" id="btwLbl">IVA this quarter</div><div class="val" id="kBtw">–</div><div class="hint" id="kBtwHint">to pay</div></div>
+    <div><div class="lbl">IVA payment due</div><div class="val" id="kDue">–</div><div class="hint" id="kDueHint">F24 by Rita</div></div>
     <div><div class="lbl">Missing invoices</div><div class="val" id="kMiss">–</div><div class="hint" id="kMissHint">&nbsp;</div></div>
-    <div><div class="lbl" id="kAmexLbl">Owed to you (Amex)</div><div class="val" id="kAmex">–</div><div class="hint" id="kAmexHint">prepaid costs, not yet repaid</div></div>
+    <div><div class="lbl" id="kAmexLbl">Owed to you</div><div class="val" id="kAmex">–</div><div class="hint" id="kAmexHint">costs you paid for the company</div></div>
   </section>
 
   <section class="panel" aria-labelledby="qH">
@@ -144,14 +144,14 @@ a.pill{text-decoration:none}
 
   <div class="grid2">
     <section class="panel" aria-labelledby="btwH">
-      <div class="panel-head"><h2 id="btwH">BTW return</h2><span class="small muted" id="btwQ"></span></div>
+      <div class="panel-head"><h2 id="btwH">IVA settlement</h2><span class="small muted" id="btwQ"></span></div>
       <div class="tbl-wrap"><table id="btwTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
-      <div class="small muted">Counted on invoice date, from the invoices in the books. Serdal files the return.</div>
+      <div class="small muted">Quarterly settlement with 1% interest; €100 or less carries to the next quarter. Counted on invoice date. Rita files the LIPE and pays the F24.</div>
     </section>
     <section class="panel" aria-labelledby="resH">
-      <div class="panel-head"><h2 id="resH">Result</h2><span class="small muted">revenue excl. BTW, costs as paid from Wise</span></div>
+      <div class="panel-head"><h2 id="resH">Result</h2><span class="small muted">revenue excl. IVA, costs as paid</span></div>
       <div class="tbl-wrap"><table id="resTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
-      <div class="small muted">Costs are taken from the bank until the invoices are in, so they still include BTW. Amex costs are not in yet. The official figures come from Serdal.</div>
+      <div class="small muted">Costs are taken from the payments until the invoices are in, so they may still include IVA. Set-up costs paid by you or the Holding are included. The official figures come from Rita.</div>
     </section>
   </div>
 
@@ -163,11 +163,16 @@ a.pill{text-decoration:none}
     <div class="tbl-wrap"><table id="bkTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
   </section>
 
+  <section class="panel" aria-labelledby="sH">
+    <div class="panel-head"><h2 id="sH">Coming deadlines</h2><span class="small muted">Italian tax calendar for the company</span></div>
+    <div class="tbl-wrap"><table id="scTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
+  </section>
+
   <div class="grid2">
     <section class="panel" aria-labelledby="mH">
       <h2 id="mH">Month folders</h2>
       <div class="months" id="months"><span class="skeleton">Loading…</span></div>
-      <div class="small muted">Each month holds Bank, Amex, Inkoop, Verkoop and Rapporten. Drop new statements and invoices in the <a href="https://drive.google.com/drive/folders/1JHihwK8HiVOlFSf6l6fwg1KZgzGtW_0H" target="_blank" rel="noopener">Inbox</a>.</div>
+      <div class="small muted">Each month holds Banca, Acquisti, Vendite and Rapporti. Company deeds go in Documenti societari. Drop Qonto statements and invoices in the <a href="https://drive.google.com/drive/folders/1VY3jTHc-VZ8ujuRhvXdCgKqYusU5ieqm" target="_blank" rel="noopener">Inbox</a>.</div>
     </section>
     <section class="panel" aria-labelledby="cH">
       <h2 id="cH">Company details</h2>
@@ -177,17 +182,17 @@ a.pill{text-decoration:none}
 </div>
 
 <script>
-const SHEET = "1-LHvR11t71ykKXCkyJd6b6NcsFYfKYHPo94Xu8PmMck";
-const INBOX = "1JHihwK8HiVOlFSf6l6fwg1KZgzGtW_0H";
+const SHEET = "1JJ86qMsJJQp5E3H54ks9lP4muqpKeY0-G795tyZg7BU";
+const INBOX = "1VY3jTHc-VZ8ujuRhvXdCgKqYusU5ieqm";
 const SHEETS = "Google Sheets", DRIVE = "Google Drive", GMAIL = "Gmail";
 const G = {row:0,date:1,cp:2,amt:3,src:4,gid:5,oid:6,from:7,subj:8,mdate:9,att:10,nr:11,idate:12,cur:13,net:14,vat:15,vtype:16,naam:17,conf:18,note:19,status:20,file:21,folder:22};
-const FILED = ["Goedgekeurd","Vervangen","Handmatig"];
+const FILED = ["Approvata","Sostituita","Manuale"];
 const RANGES = {
-  boek: "Boekingen!A1:M", gev: "Gevonden!A1:W", fin: "'Facturen in'!A1:T", fuit: "'Facturen uit'!A1:R",
-  btw: "'BTW per kwartaal'!A1:I18", mappen: "Mappen!A1:B", inst: "Instellingen!A1:C16",
-  amex: "'Amex declaraties'!A3:B6", log: "'Run log'!A1:G", vragen: "Vragen!A1:F"
+  boek: "Registrazioni!A1:M", gev: "Trovate!A1:W", fin: "'Fatture passive'!A1:W", fuit: "'Fatture attive'!A1:S",
+  btw: "'IVA trimestrale'!A1:G22", mappen: "Cartelle!A1:G", inst: "Impostazioni!A1:C27",
+  debiti: "'Debiti verso soci'!A3:B6", log: "'Registro attività'!A1:G", vragen: "Domande!A1:G", scad: "Scadenze!A1:F"
 };
-const COST_ACCOUNTS = ["Inkoop data en diensten","Freelancers en externe ontwikkeling","Advies en juridisch","Accountant en administratie","Software en abonnementen","Beurzen en evenementen","Reiskosten","Hotel en verblijf","Representatie en maaltijden","Marketing","Verzekeringen","Bankkosten","Kantoor en huisvesting","Rente","Overige kosten","Management fee"];
+const COST_ACCOUNTS = ["Software e servizi cloud","Sviluppo software e servizi informatici","Profilazione e dati","Consulenze amministrative e fiscali","Consulenze legali e notarili","Consulenze per bandi e finanza agevolata","Affitti e coworking","Viaggi e trasferte","Vitto e alloggio","Spese di rappresentanza","Marketing e fiere","Telefonia e internet","Valori bollati, diritti e tasse","Compensi amministratori","Personale","Altri costi","Spese bancarie","Costi di impianto e ampliamento"];
 const S = { data: {}, errs: {}, mcp: null, fileArgs: false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -241,7 +246,7 @@ function render(){
   const sel = $("quarter"); const cur = sel.value || defaultQuarter();
   if (qs.length){ sel.innerHTML = qs.map(q=>`<option ${q===cur?"selected":""}>${esc(q)}</option>`).join(""); }
   const q = sel.value || cur;
-  renderStrip(q); renderQuestions(); renderAudit(); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
+  renderStrip(q); renderQuestions(); renderAudit(); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderDeadlines(); renderMonths(); renderCompany(); renderLastRun();
 }
 
 function btwCol(q){ const hdr=((S.data.btw||[])[1]||[]); return hdr.indexOf(q); }
@@ -249,29 +254,28 @@ function btwVal(q, rowIdx){ const c=btwCol(q); if (c<1) return 0; return num(((S
 
 function renderStrip(q){
   if (S.errs.btw){ $("kBtw").textContent="–"; $("kBtwHint").textContent="could not load"; }
-  else { const t=btwVal(q,14); $("kBtw").textContent=eur0(t); $("kBtwHint").textContent = t>0.5?"to pay":t<-0.5?"to get back":"nothing to pay yet"; }
-  $("btwLbl").textContent = `BTW ${q}`;
-  const d=deadline(q), days=Math.ceil((d - new Date(new Date().toDateString()))/864e5);
-  $("kDue").textContent = d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-  $("kDueHint").textContent = days<0?`${-days} days ago`:days===0?"today":`${days} days left`;
-  const miss = rows("boek",13).filter(x=>x.r[8]==="Factuur ontbreekt");
+  else { const t=btwVal(q,10), c=btwVal(q,11); $("kBtw").textContent=eur0(t); $("kBtwHint").textContent = t>0.5?"to pay":c<-0.5?`credit ${eur0(-c)} carried forward`:Math.abs(c)>0.5?`${eur0(c)} carried forward`:"nothing to pay"; }
+  $("btwLbl").textContent = `IVA ${q}`;
+  const dueTxt=((S.data.btw||[])[12]||[])[btwCol(q)]||""; const d=dueTxt?new Date(dueTxt+"T00:00:00"):null;
+  const days=d?Math.ceil((d - new Date(new Date().toDateString()))/864e5):null;
+  $("kDue").textContent = d? d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "–";
+  $("kDueHint").textContent = days==null?"":days<0?`${-days} days ago`:days===0?"today":`${days} days left · LIPE ${((S.data.btw||[])[14]||[])[btwCol(q)]||""}`;
+  const miss = rows("boek",13).filter(x=>x.r[8]==="Fattura mancante");
   $("kMiss").textContent = S.errs.boek?"–":String(miss.length);
-  $("kMissHint").textContent = miss.length? eur0(-miss.reduce((a,x)=>a+num(x.r[5]),0))+" without invoice" : "all bookings have an invoice";
-  const all = rows("boek",13);
-  const amexBooked = all.some(x=>x.r[1]==="Amex");
-  const repaid = -all.filter(x=>x.r[1]==="Wise"&&x.r[6]==="R/C Jan Brabers").reduce((a,x)=>a+num(x.r[5]),0);
-  if (!amexBooked){ $("kAmex").textContent = S.errs.boek?"–":eur0(repaid); $("kAmexLbl").textContent="Amex repaid to you"; $("kAmexHint").textContent="this year; Amex statements not booked yet"; }
-  else { const owed=(S.data.amex||[]).find(r=>/Nog te betalen/.test(r[0]||"")); $("kAmex").textContent=eur0(num(owed&&owed[1])); $("kAmexLbl").textContent="Owed to you (Amex)"; $("kAmexHint").textContent="prepaid costs, not yet repaid"; }
+  $("kMissHint").textContent = miss.length? eur0(-miss.reduce((a,x)=>a+num(x.r[5]),0))+" without invoice" : "all payments have an invoice";
+  const deb=S.data.debiti||[]; const jan=num((deb[0]||[])[1]), hold=num((deb[1]||[])[1]);
+  $("kAmex").textContent = S.errs.debiti?"–":eur0(jan);
+  $("kAmexHint").textContent = hold? `plus ${eur0(hold)} paid by the Holding` : "costs you paid for the company";
 }
 
 function renderQuestions(){
   const box=$("questions");
   if (S.errs.vragen){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.vragen,SHEETS))}</div>`; return; }
-  const qs=(S.data.vragen||[]).slice(1).map((r,i)=>({r:(r.concat(Array(6).fill(""))).slice(0,6),row:i+2})).filter(x=>x.r[0]&&x.r[1]);
+  const qs=(S.data.vragen||[]).slice(1).map((r,i)=>({r:(r.concat(Array(7).fill(""))).slice(0,7),row:i+2})).filter(x=>x.r[0]&&x.r[1]);
   const open=qs.filter(x=>!x.r[3]), done=qs.filter(x=>x.r[3]);
   $("qCount").textContent = qs.length? `${open.length} open, ${done.length} answered` : "";
   let h = open.map(x=>`<div class="item amber" data-qrow="${x.row}">
-      <div class="top"><span class="who">${esc(x.r[1])}</span>${num(x.r[2])?`<span class="amt num">${eur(num(x.r[2]))}</span>`:""}</div>
+      <div class="top"><span class="who">${x.r[6]==="Rita"?`<span class="pill grey">ask Rita</span> `:""}${esc(x.r[1])}</span>${num(x.r[2])?`<span class="amt num">${eur(num(x.r[2]))}</span>`:""}</div>
       <div class="act"><input type="text" id="ans-${x.row}" placeholder="Your answer" aria-label="Answer to question ${esc(x.r[0])}"><button class="btn primary" type="button" data-act="answer">Save answer</button></div>
       <div class="status" id="qst-${x.row}" aria-live="polite"></div></div>`).join("");
   if (done.length) h += `<details><summary class="small muted" style="cursor:pointer">Answered (${done.length})</summary><div class="todo" style="margin-top:10px">`+
@@ -282,14 +286,14 @@ function renderQuestions(){
 function renderTodo(){
   const box=$("todo");
   if (S.errs.boek){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</div>`; return; }
-  const miss = rows("boek",13).filter(x=>x.r[8]==="Factuur ontbreekt");
+  const miss = rows("boek",13).filter(x=>x.r[8]==="Fattura mancante");
   const groups = {};
-  for (const x of miss){ const k=(x.r[6]==="Management fee")?"Brabers Tech (management fee)":x.r[3].trim(); (groups[k]=groups[k]||[]).push(x); }
+  for (const x of miss){ const k=x.r[3].trim(); (groups[k]=groups[k]||[]).push(x); }
   S.groups = groups;
   const list = Object.entries(groups).sort((a,b)=>a[1].reduce((s,x)=>s+num(x.r[5]),0)-b[1].reduce((s,x)=>s+num(x.r[5]),0));
-  const notHs = rows("fin",20).filter(x=>x.r[4]==="Nee");
-  const gv = {}; for (const x of gevRows()) if (!["Afgewezen","Verwijderd"].includes(x.r[G.status])) gv[x.r[G.row]] = x.r[G.status];
-  const tag = b => gv[b]==="Te controleren" ? ` <span class="pill amber">found, check above</span>` : gv[b]==="Doorsturen of uploaden" ? ` <span class="pill amber">in Outlook</span>` : "";
+  const notHs = rows("fin",23).filter(x=>x.r[5]==="No");
+  const gv = {}; for (const x of gevRows()) if (!["Rifiutata","Rimossa"].includes(x.r[G.status])) gv[x.r[G.row]] = x.r[G.status];
+  const tag = b => gv[b]==="Da controllare" ? ` <span class="pill amber">found, check above</span>` : gv[b]==="Inoltra o carica" ? ` <span class="pill amber">in Outlook</span>` : "";
   let html = list.map(([name,xs],gi)=>{ const tot=xs.reduce((s,x)=>s+num(x.r[5]),0); xs.sort((a,b)=>a.r[0]<b.r[0]?-1:1);
     const span = xs.length>1? `${xs[0].r[0]} to ${xs[xs.length-1].r[0]}` : xs[0].r[0];
     const pays = `<div class="rowlist">${xs.map(x=>`<div data-b="${x.row}"><span class="l"><span class="num">${esc(x.r[0])}</span> · ${esc(x.r[4])} · <span class="num">${eur(num(x.r[5]))}</span>${tag(String(x.row))}<span class="status" id="bst-${x.row}" aria-live="polite"></span></span>
@@ -305,26 +309,26 @@ function renderTodo(){
       <div class="status" id="gst-${gi}" aria-live="polite"></div>
     </div>`; }).join("");
   S.groupNames = list.map(([n])=>n);
-  html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in Hyperscout's name</span><span class="amt num">${eur(num(r[7]))} BTW</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask for a corrected invoice addressed to Hyperscout Holding B.V., or this BTW cannot be reclaimed.</div></div>`; }).join("");
+  html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in the company's name</span><span class="amt num">${eur(num(r[8]))} IVA</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask for a corrected e-invoice to Hyperscout Italia S.r.l. (P.IVA 03498360738), or this IVA cannot be deducted.</div></div>`; }).join("");
   box.innerHTML = html || `<div class="empty">Nothing missing. Every payment has its invoice.</div>`;
 }
 
 function gevRows(){ return (S.data.gev||[]).slice(1).map((r,i)=>({r:(r.concat(Array(23).fill(""))).slice(0,23), row:i+2})).filter(x=>x.r[0]); }
 function gevByRow(row){ return gevRows().find(x=>String(x.row)===String(row)); }
-function inkoopFor(date){ const m=(S.data.mappen||[]).find(r=>r[0]===String(date).slice(0,7)); return (m&&m[4])||INBOX; }
+function inkoopFor(date){ const m=(S.data.mappen||[]).find(r=>r[0]===String(date).slice(0,7)); return (m&&m[3])||INBOX; }
 const money=(cur,v)=>v===""||v==null?"":(cur==="EUR"?"€ ":cur+" ")+num(v).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
 
 function renderAudit(){
   const box=$("audit");
   if (S.errs.gev){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.gev,SHEETS))}</div>`; $("outlookBox").innerHTML=""; $("filedBox").innerHTML=""; return; }
   const g=gevRows();
-  const pend=g.filter(x=>x.r[G.status]==="Te controleren").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
-  const outl=g.filter(x=>x.r[G.status]==="Doorsturen of uploaden").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
+  const pend=g.filter(x=>x.r[G.status]==="Da controllare").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
+  const outl=g.filter(x=>x.r[G.status]==="Inoltra o carica").sort((a,b)=>a.r[G.date]<b.r[G.date]?-1:1);
   const filed=g.filter(x=>FILED.includes(x.r[G.status])&&x.r[G.file]).sort((a,b)=>a.r[G.date]<b.r[G.date]?1:-1);
   $("auCount").textContent = `${pend.length} to check · ${outl.length} in Outlook · ${filed.length} filed`;
   box.innerHTML = pend.map(x=>{ const r=x.r;
     const facts=[r[G.nr]&&`Invoice <b>${esc(r[G.nr])}</b>`, r[G.idate]&&`dated <b>${esc(r[G.idate])}</b>`,
-      r[G.net]!==""&&`net <b>${esc(money(r[G.cur],r[G.net]))}</b>`, r[G.vat]!==""&&num(r[G.vat])?`BTW <b>${esc(money(r[G.cur],r[G.vat]))}</b>`:"",
+      r[G.net]!==""&&`net <b>${esc(money(r[G.cur],r[G.net]))}</b>`, r[G.vat]!==""&&num(r[G.vat])?`IVA <b>${esc(money(r[G.cur],r[G.vat]))}</b>`:"",
       r[G.vtype]&&`<b>${esc(r[G.vtype])}</b>`, r[G.naam]&&`to <b>${esc(r[G.naam])}</b>`].filter(Boolean).join("<span>·</span>");
     const kind = r[G.att] ? `PDF: ${esc(r[G.att])}` : "no PDF, the mail itself is the receipt";
     return `<div class="item amber" data-gv="${x.row}">
@@ -344,12 +348,12 @@ function renderAudit(){
     </div>`; }).join("") || `<div class="empty">Nothing to check. New finds appear here after each run.</div>`;
 
   $("outlookBox").innerHTML = outl.length ? `<div style="display:grid;gap:8px"><h3 style="margin:6px 0 0;font:600 .95rem var(--display)">In your Outlook (${outl.length})</h3>
-    <div class="small muted">These invoices are in brabers@techinfashion.nl, tagged with the orange category "Hyperscout factuur". Outlook does not let me pull the PDFs out. Either forward them to janbrabers@gmail.com (filter on the category, select all, forward) and they show up above after the next run, or drop each PDF here.</div>
+    <div class="small muted">These invoices are in brabers@techinfashion.nl, tagged with the green category "Hyperscout Italia fattura". Outlook does not let me pull the PDFs out. Either forward them to janbrabers@gmail.com (filter on the category, select all, forward) and they show up above after the next run, or drop each PDF here.</div>
     <div class="rowlist">${outl.map(x=>{const r=x.r; return `<div data-gv="${x.row}"><span class="l"><b>${esc(r[G.cp])}</b> · <span class="num">${esc(r[G.date])}</span> · <span class="num">${eur(num(r[G.amt]))}</span><div class="small muted">${esc(r[G.subj])}${r[G.att]?` · ${esc(r[G.att])}`:""}</div>${r[G.note]&&!/^PDF zit in Outlook/.test(r[G.note])?`<div class="small">${esc(r[G.note].replace(/ ?PDF zit in Outlook.*$/,""))}</div>`:""}<span class="status" id="ast-${x.row}" aria-live="polite"></span></span>
       <span class="a"><span class="btn sm file-label">Upload PDF<input type="file" accept=".pdf,image/*" data-act="ofile" aria-label="Upload the ${esc(r[G.cp])} invoice"></span></span></div>`}).join("")}</div></div>` : "";
 
   $("filedBox").innerHTML = filed.length ? `<details><summary class="small">Filed invoices (${filed.length}): view, replace or remove</summary>
-    <div class="rowlist" style="margin-top:8px">${filed.map(x=>{const r=x.r; return `<div data-gv="${x.row}"><span class="l"><b>${esc(r[G.cp])}</b> · <span class="num">${esc(r[G.date])}</span> · <span class="num">${eur(num(r[G.amt]))}</span>${r[G.nr]?` · ${esc(r[G.nr])}`:""} <span class="pill grey">${r[G.status]==="Handmatig"?"uploaded by you":r[G.status]==="Vervangen"?"replaced":"from mail"}</span><span class="status" id="ast-${x.row}" aria-live="polite"></span></span>
+    <div class="rowlist" style="margin-top:8px">${filed.map(x=>{const r=x.r; return `<div data-gv="${x.row}"><span class="l"><b>${esc(r[G.cp])}</b> · <span class="num">${esc(r[G.date])}</span> · <span class="num">${eur(num(r[G.amt]))}</span>${r[G.nr]?` · ${esc(r[G.nr])}`:""} <span class="pill grey">${r[G.status]==="Manuale"?"uploaded by you":r[G.status]==="Sostituita"?"replaced":"from mail"}</span><span class="status" id="ast-${x.row}" aria-live="polite"></span></span>
       <span class="a"><a class="btn sm" href="https://drive.google.com/file/d/${encodeURIComponent(r[G.file])}/view" target="_blank" rel="noopener">View ↗</a>
       <span class="btn sm file-label">Replace<input type="file" accept=".pdf,image/*" data-act="frep" aria-label="Replace the ${esc(r[G.cp])} invoice"></span>
       <button class="btn sm danger" type="button" data-act="rm">Remove</button></span></div>`}).join("")}</div></details>` : "";
@@ -358,13 +362,14 @@ function renderAudit(){
 function renderBtw(q){
   const t=$("btwTbl"); $("btwQ").textContent = q;
   if (S.errs.btw){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.btw,SHEETS))}</td></tr></tbody>`; return; }
-  const L=[["1a","Sales at 21%",2,3],["1b","Sales at 9%",4,5],["3a","Goods exported outside the EU",6,null],["3b","Services to EU businesses (ICP)",7,null],
-           ["4a","Services bought outside the EU",8,9],["4b","Services bought in the EU",10,11],["5a","BTW owed",null,12],["5b","BTW you can deduct",null,13]];
-  let h=`<thead><tr><th>Box</th><th></th><th class="r">Base</th><th class="r">BTW</th></tr></thead><tbody>`;
-  for (const [b,l,bi,vi] of L) h+=`<tr><td class="box">${b}</td><td>${l}</td><td class="r">${bi==null?"":eur(btwVal(q,bi))}</td><td class="r">${vi==null?"":eur(btwVal(q,vi))}</td></tr>`;
-  const tot=btwVal(q,14);
-  h+=`<tr class="total"><td></td><td>${tot>0.005?"To pay":tot<-0.005?"To get back":"Balance"}</td><td></td><td class="r">${eur(Math.abs(tot))}</td></tr></tbody>`;
-  const non=btwVal(q,16); if (non) h+=`<tfoot><tr><td></td><td class="small muted" colspan="2">Services to customers outside the EU (not in the return)</td><td class="r small">${eur(non)}</td></tr></tfoot>`;
+  const L=[["IVA on sales",2],["IVA on reverse-charge purchases (TD17)",3],["IVA you can deduct",5,true],["Balance this quarter",6],
+           ["Carried in from last quarter",7],["1% interest",9]];
+  let h=`<thead><tr><th></th><th class="r">Amount</th></tr></thead><tbody>`;
+  for (const [l,i,neg] of L) h+=`<tr><td>${l}</td><td class="r">${eur(neg?-btwVal(q,i):btwVal(q,i))}</td></tr>`;
+  const pay=btwVal(q,10), carry=btwVal(q,11), col=btwCol(q), cell=i=>(((S.data.btw||[])[i]||[])[col]||"");
+  h+=`<tr class="total"><td>To pay by ${esc(cell(12))} (F24 ${esc(cell(13))})</td><td class="r">${eur(pay)}</td></tr></tbody>`;
+  const ex=[["Carried to next quarter",carry],["Stamp duty on e-invoices",btwVal(q,15)],["Services sold to EU businesses (INTRA-1 quater)",btwVal(q,17)],["TD17 still to send (number)",null,cell(20)],["Withholding tax on fees",btwVal(q,21)]];
+  h+=`<tfoot>`+ex.filter(e=>e[2]? e[2]!=="0" : Math.abs(e[1])>0.005).map(e=>`<tr><td class="small muted">${e[0]}</td><td class="r small">${e[2]!=null?esc(e[2]):eur(e[1])}</td></tr>`).join("")+`</tfoot>`;
   t.innerHTML=h;
 }
 
@@ -373,12 +378,12 @@ function renderResult(q){
   if (S.errs.fuit||S.errs.boek){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.fuit||S.errs.boek,SHEETS))}</td></tr></tbody>`; return; }
   const ms=qMonths(q), y=q.slice(0,4), last=ms[2];
   const inQ=d=>ms.includes(d.slice(0,7)), ytd=d=>d.slice(0,4)===y && d.slice(0,7)<=last;
-  const fuit=rows("fuit",18), bk=rows("boek",13);
+  const fuit=rows("fuit",19), bk=rows("boek",13);
   const rev=f=>fuit.filter(x=>f(x.r[0])).reduce((a,x)=>a+num(x.r[5]),0);
   const cost=(f,acc)=>bk.filter(x=>f(x.r[0])&&acc.includes(x.r[6])).reduce((a,x)=>a+num(x.r[5]),0);
-  const other=COST_ACCOUNTS.filter(a=>!["Management fee","Rente","Bankkosten"].includes(a));
-  const R=[["Revenue (invoiced)",rev(inQ),rev(ytd)],["Management fee",cost(inQ,["Management fee"]),cost(ytd,["Management fee"])],
-           ["Other costs paid",cost(inQ,other),cost(ytd,other)],["Interest and bank charges",cost(inQ,["Rente","Bankkosten"]),cost(ytd,["Rente","Bankkosten"])]];
+  const other=COST_ACCOUNTS.filter(a=>!["Costi di impianto e ampliamento","Spese bancarie"].includes(a));
+  const R=[["Revenue (invoiced)",rev(inQ),rev(ytd)],["Set-up costs",cost(inQ,["Costi di impianto e ampliamento"]),cost(ytd,["Costi di impianto e ampliamento"])],
+           ["Other costs paid",cost(inQ,other),cost(ytd,other)],["Bank charges",cost(inQ,["Spese bancarie"]),cost(ytd,["Spese bancarie"])]];
   const tq=R.reduce((a,r)=>a+r[1],0), ty=R.reduce((a,r)=>a+r[2],0);
   t.innerHTML=`<thead><tr><th></th><th class="r">${esc(q)}</th><th class="r">${y} to date</th></tr></thead><tbody>`+
     R.map(r=>`<tr><td>${r[0]}</td><td class="r">${eur(r[1])}</td><td class="r">${eur(r[2])}</td></tr>`).join("")+
@@ -392,8 +397,8 @@ function renderBookings(){
   const cur=msel.value;
   msel.innerHTML=`<option value="">All months</option>`+months.map(m=>`<option ${m===cur?"selected":""}>${m}</option>`).join("");
   const list=all.filter(x=>!msel.value||x.r[0].startsWith(msel.value)).sort((a,b)=>a.r[0]<b.r[0]?1:-1);
-  if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No bookings yet. Drop the Wise statements (CSV) in the Inbox and ask Claude to book them.</td></tr></tbody>`; return; }
-  const pill=(s,f)=>s==="Gematcht"&&f?`<a class="pill green" href="https://drive.google.com/file/d/${encodeURIComponent(f)}/view" target="_blank" rel="noopener">invoice ↗</a>`:s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:s==="Vraag"?`<span class="pill amber">question</span>`:s==="Eerder verwerkt"?`<span class="pill grey">filed by Serdal</span>`:`<span class="pill grey">no invoice needed</span>`;
+  if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No bookings yet. Drop the Qonto statement (CSV) in the Inbox and ask Claude to book them.</td></tr></tbody>`; return; }
+  const pill=(s,f)=>s==="Abbinata"&&f?`<a class="pill green" href="https://drive.google.com/file/d/${encodeURIComponent(f)}/view" target="_blank" rel="noopener">invoice ↗</a>`:s==="Abbinata"?`<span class="pill green">invoice</span>`:s==="Fattura mancante"?`<span class="pill red">missing</span>`:s==="Domanda"?`<span class="pill amber">question</span>`:`<span class="pill grey">no invoice needed</span>`;
   t.innerHTML=`<thead><tr><th>Date</th><th>Source</th><th>Counterparty</th><th>Account</th><th class="r">Amount</th><th>Invoice</th></tr></thead><tbody>`+
     list.map(x=>{const r=x.r;return `<tr><td class="num">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[3])}<div class="small muted">${esc(r[4])}</div></td><td class="small">${esc(r[6])}</td><td class="r">${eur(num(r[5]))}</td><td>${pill(r[8],r[12])}</td></tr>`}).join("")+`</tbody>`;
 }
@@ -409,14 +414,16 @@ function renderCompany(){
   const el=$("company");
   if (S.errs.inst){ el.innerHTML=`<span class="sec-err">${esc(errText(S.errs.inst,SHEETS))}</span>`; return; }
   const get=k=>((S.data.inst||[]).find(r=>r[0]===k)||[])[1]||"";
-  const kvk=get("KvK-nummer");
-  el.innerHTML=`<span class="muted">Company</span><span>${esc(get("Bedrijf"))}</span>
-    <span class="muted">RSIN</span><span class="num">${esc(get("Fiscaal nummer (RSIN)"))}</span>
-    <span class="muted">BTW id</span><span class="num">${esc(get("Btw-id"))}</span>
-    <label class="muted" for="kvk">KvK number</label>
-    <span style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="kvk" type="text" inputmode="numeric" value="${esc(kvk)}" placeholder="8 digits"><button class="btn" type="button" id="kvkSave">Save</button><span class="status" id="kvkSt" aria-live="polite"></span></span>
-    <span class="muted">Accountant</span><span>${esc(get("Accountant"))}</span>
-    <span class="muted">BTW filing</span><span>per quarter</span>`;
+  const code=get("Codice destinatario SdI");
+  el.innerHTML=`<span class="muted">Company</span><span>${esc(get("Denominazione"))}</span>
+    <span class="muted">P.IVA / C.F.</span><span class="num">${esc(get("Partita IVA e codice fiscale"))}</span>
+    <span class="muted">Registered office</span><span>${esc(get("Sede legale"))}</span>
+    <span class="muted">PEC</span><span>${esc(get("PEC"))}</span>
+    <label class="muted" for="kvk">SdI recipient code</label>
+    <span style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="kvk" type="text" value="${esc(code==="da impostare"?"":code)}" placeholder="7 characters" maxlength="7" autocapitalize="characters"><button class="btn" type="button" id="kvkSave">Save</button><span class="status" id="kvkSt" aria-live="polite"></span></span>
+    <span class="muted">Commercialista</span><span>${esc(get("Commercialista"))}</span>
+    <span class="muted">IVA settlement</span><span>quarterly</span>
+    <span class="muted">Startup innovativa</span><span>${esc(get("Startup innovativa"))}</span>`;
   $("kvkSave").onclick = saveKvk;
 }
 
@@ -428,12 +435,12 @@ function renderLastRun(){
 // ---------- actions (each only on a click)
 const today = () => new Date().toISOString().slice(0,10);
 async function addNote(who, text){
-  return S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"'Notities Jan'!A:D",values:[["'"+today(),who,text,""]]});
+  return S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"'Note Jan'!A:D",values:[["'"+today(),who,text,""]]});
 }
 async function saveAnswer(row){
   const v=$("ans-"+row).value.trim(), st=$("qst-"+row); if (!v){ st.className="status err"; st.textContent="Type an answer first."; return; }
   st.className="status"; st.textContent="Saving…";
-  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Vragen!D${row}`,values:[[v]]});
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Domande!D${row}`,values:[[v]]});
     st.className="status ok"; st.textContent="Saved. Used on the next run.";
     const r=(S.data.vragen||[])[row-1]; if(r){ while(r.length<4) r.push(""); r[3]=v; } setTimeout(renderQuestions,1200);
   }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
@@ -467,16 +474,16 @@ async function driveUpload(title, parent, blob, mime){
 }
 function upErr(e){
   if (e?.code==="too_big") return "This view can only send files up to 700 KB. Save a smaller PDF, or drop it in the Inbox folder.";
-  if (e?.code==="no_id") return "Google Drive saved nothing it could point to. Check the month's Inkoop folder before trying again.";
-  if (e?.code==="server_unavailable"||e?.code==="upstream_error") return "No answer from Google Drive. Check the month's Inkoop folder before trying again, the file may have arrived.";
+  if (e?.code==="no_id") return "Google Drive saved nothing it could point to. Check the month's Acquisti folder before trying again.";
+  if (e?.code==="server_unavailable"||e?.code==="upstream_error") return "No answer from Google Drive. Check the month's Acquisti folder before trying again, the file may have arrived.";
   return errText(e,DRIVE);
 }
 // write the result into the books: found-tab row and the booking
 async function markFiled(gRow, status, fileId, bRow, nr){
-  if (gRow) await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${gRow}:V${gRow}`,values:[[status,fileId]]});
+  if (gRow) await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Trovate!U${gRow}:V${gRow}`,values:[[status,fileId]]});
   const b=rows("boek",13).find(x=>String(x.row)===String(bRow));
-  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!H${bRow}:I${bRow}`,values:[[nr||(b?b.r[7]:"")||"","Gematcht"]]});
-  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!M${bRow}`,values:[[fileId]]});
+  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Registrazioni!H${bRow}:I${bRow}`,values:[[nr||(b?b.r[7]:"")||"","Abbinata"]]});
+  await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Registrazioni!M${bRow}`,values:[[fileId]]});
 }
 
 // Gmail RAW -> MIME parts (binary strings)
@@ -543,15 +550,15 @@ async function approve(row){
     else if (m.html){ mime="text/html"; ext="html"; blob=new Blob([m.html],{type:mime}); }
     else { setSt(sid,"No PDF or receipt text in this mail. Upload the right one instead.","err"); return; }
     const title=`${r[G.date]}_${safe(r[G.cp])}_${safe(r[G.nr]||"factuur")}.${ext}`;
-    setSt(sid,"Saving to the month's Inkoop folder…");
+    setSt(sid,"Saving to the month's Acquisti folder…");
     let id; try{ id=await driveUpload(title, r[G.folder]||inkoopFor(r[G.date]), blob, mime); }catch(e){ setSt(sid,upErr(e),"err"); return; }
-    try{ await markFiled(row,"Goedgekeurd",id,r[G.row],r[G.nr]); }catch(e){ setSt(sid,`Saved in Drive, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
+    try{ await markFiled(row,"Approvata",id,r[G.row],r[G.nr]); }catch(e){ setSt(sid,`Saved in Drive, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
     setSt(sid,"Filed. The payment now has its invoice.","ok"); setTimeout(reloadBooks,900);
   } finally { busy.delete(row); }
 }
 async function reject(row){
   const x=gevByRow(row); if (!x) return; setSt("ast-"+row,"Saving…");
-  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${row}`,values:[["Afgewezen"]]});
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Trovate!U${row}`,values:[["Rifiutata"]]});
     setSt("ast-"+row,"Rejected. The payment stays on the missing list.","ok"); setTimeout(reloadBooks,900);
   }catch(e){ setSt("ast-"+row,errText(e,SHEETS),"err"); }
 }
@@ -569,8 +576,8 @@ async function uploadOwn(file, {gRow, bRow, status, oldFile, sid}){
     try{
       if (gRow) await markFiled(gRow,status,id,bRow,nr);
       else {
-        await S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"Gevonden!A:W",values:[[Number(bRow),b?b.r[0]:"",b?b.r[3]:"",b?num(b.r[5]):"","Handmatig","","","","","",file.name,nr,"","","","","","","","Door Jan geüpload","Handmatig",id,inkoopFor(date)]]});
-        await markFiled(null,"Handmatig",id,bRow,nr);
+        await S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"Trovate!A:W",values:[[Number(bRow),b?b.r[0]:"",b?b.r[3]:"",b?num(b.r[5]):"","Manuale","","","","","",file.name,nr,"","","","","","","","Caricata da Jan","Manuale",id,inkoopFor(date)]]});
+        await markFiled(null,"Manuale",id,bRow,nr);
       }
     }catch(e){ setSt(sid,`Saved in Drive, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
     let msg="Filed. The payment now has its invoice.";
@@ -585,20 +592,32 @@ async function removeFiled(btn,row){
   armed.delete(row); btn.disabled=true; setSt(sid,"Removing…");
   try{ await S.mcp.callTool(DRIVE,"trash_file",{fileId:x.r[G.file]}); }catch(e){ btn.disabled=false; btn.textContent="Remove"; setSt(sid,errText(e,DRIVE),"err"); return; }
   try{
-    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Gevonden!U${row}:V${row}`,values:[["Verwijderd",""]]});
-    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!I${x.r[G.row]}`,values:[["Factuur ontbreekt"]]});
-    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!M${x.r[G.row]}`,values:[[""]]});
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Trovate!U${row}:V${row}`,values:[["Rimossa",""]]});
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Registrazioni!I${x.r[G.row]}`,values:[["Fattura mancante"]]});
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Registrazioni!M${x.r[G.row]}`,values:[[""]]});
   }catch(e){ setSt(sid,`The file is in the Drive bin, but the books were not updated: ${errText(e,SHEETS)} Press Refresh and try again.`,"err"); return; }
   setSt(sid,"Removed. Upload the right one under Missing invoices.","ok"); setTimeout(reloadBooks,900);
 }
 
 async function saveKvk(){
-  const v=$("kvk").value.trim(), st=$("kvkSt");
-  if (v && !/^\d{8}$/.test(v)){ st.className="status err"; st.textContent="A KvK number has 8 digits."; return; }
+  const v=$("kvk").value.trim().toUpperCase(), st=$("kvkSt");
+  if (v && !/^[A-Z0-9]{7}$/.test(v)){ st.className="status err"; st.textContent="An SdI recipient code has 7 letters or digits."; return; }
   st.className="status"; st.textContent="Saving…";
-  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:"Instellingen!B7",values:[[v?("'"+v):""]]});
-    st.className="status ok"; st.textContent="Saved."; const r=(S.data.inst||[]).find(r=>r[0]==="KvK-nummer"); if(r) r[1]=v;
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:"Impostazioni!B13",values:[[v||"da impostare"]]});
+    st.className="status ok"; st.textContent="Saved."; const r=(S.data.inst||[]).find(r=>r[0]==="Codice destinatario SdI"); if(r) r[1]=v||"da impostare";
   }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
+}
+
+function renderDeadlines(){
+  const t=$("scTbl");
+  if (S.errs.scad){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.scad,SHEETS))}</td></tr></tbody>`; return; }
+  const td=new Date().toISOString().slice(0,10);
+  const list=(S.data.scad||[]).slice(1).filter(r=>r[0]&&r[1]&&(!/^20/.test(r[0])||r[0]>=td)&&r[4]!=="Fatto")
+    .sort((a,b)=>{const A=/^20/.test(a[0])?a[0]:"0", B=/^20/.test(b[0])?b[0]:"0"; return A<B?-1:A>B?1:0;}).slice(0,8);
+  if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No deadlines coming up.</td></tr></tbody>`; return; }
+  const st=s=>s==="Da fare"?`<span class="pill red">to do</span>`:s==="Da verificare"?`<span class="pill amber">to check</span>`:s==="Non dovuto"?`<span class="pill grey">not due</span>`:s?`<span class="pill grey">${esc(s)}</span>`:"";
+  t.innerHTML=`<thead><tr><th>Date</th><th>What</th><th>Who</th><th class="r">Amount</th><th></th></tr></thead><tbody>`+
+    list.map(r=>`<tr><td class="num">${esc(/^20/.test(r[0])?r[0]:"monthly, 16th")}</td><td>${esc(r[1])}${r[5]?`<div class="small muted">${esc(r[5])}</div>`:""}</td><td class="small">${esc(r[2])}</td><td class="r">${num(r[3])?eur(num(r[3])):""}</td><td>${st(r[4])}</td></tr>`).join("")+`</tbody>`;
 }
 
 document.addEventListener("click", e=>{
@@ -616,12 +635,12 @@ document.addEventListener("change", e=>{
   const t=e.target;
   if (S.mcp && t.matches("input[type=file][data-act]")){
     const f=t.files&&t.files[0]; const a=t.dataset.act; t.value="";
-    if (a==="bfile"){ const b=t.closest("[data-b]").dataset.b; const found=gevRows().find(x=>String(x.r[G.row])===String(b)&&["Te controleren","Doorsturen of uploaden"].includes(x.r[G.status]));
-      uploadOwn(f,{gRow:found&&found.row,bRow:b,status:"Handmatig",sid:"bst-"+b}); }
+    if (a==="bfile"){ const b=t.closest("[data-b]").dataset.b; const found=gevRows().find(x=>String(x.r[G.row])===String(b)&&["Da controllare","Inoltra o carica"].includes(x.r[G.status]));
+      uploadOwn(f,{gRow:found&&found.row,bRow:b,status:"Manuale",sid:"bst-"+b}); }
     else { const row=t.closest("[data-gv]").dataset.gv; const x=gevByRow(row); if (!x) return;
-      if (a==="rep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Vervangen",sid:"ast-"+row});
-      if (a==="ofile") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Handmatig",sid:"ast-"+row});
-      if (a==="frep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Vervangen",oldFile:x.r[G.file],sid:"ast-"+row}); }
+      if (a==="rep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Sostituita",sid:"ast-"+row});
+      if (a==="ofile") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Manuale",sid:"ast-"+row});
+      if (a==="frep") uploadOwn(f,{gRow:row,bRow:x.r[G.row],status:"Sostituita",oldFile:x.r[G.file],sid:"ast-"+row}); }
   }
   if (e.target.id==="quarter"){ render(); }
   if (e.target.id==="month"){ renderBookings(); }
