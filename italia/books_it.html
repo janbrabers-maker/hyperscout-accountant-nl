@@ -4,16 +4,16 @@
 <style>
 /* Layout: one column of working panels. Status strip first, then the to-do lists, then IVA, result, bookings, deadlines, folders. */
 :root{
-  --bg:#F7F5F1; --surface:#FFFFFF; --sunk:#EFE8DC; --fg:#14213D; --muted:#5D6375; --line:#E2DCD0;
-  --accent:#14213D; --accent-fg:#FFFFFF; --red:#B8322A; --red-bg:#FBEAE8; --amber:#9A6412; --amber-bg:#FBF1DE; --green:#2E7A4C; --green-bg:#E5F3EA;
+  --bg:#F6F4EE; --surface:#FFFFFF; --sunk:#E9EFE9; --fg:#15302A; --muted:#55645E; --line:#DCE3DC;
+  --accent:#1E4A3B; --accent-fg:#FFFFFF; --red:#B8322A; --red-bg:#FBEAE8; --amber:#9A6412; --amber-bg:#FBF1DE; --green:#2E7A4C; --green-bg:#E5F3EA;
   --display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif; --body:"DM Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0D1424; --surface:#151F36; --sunk:#1C2844; --fg:#ECE7DD; --muted:#A2A9B9; --line:#26324F;
-  --accent:#EFE8DC; --accent-fg:#14213D; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}}
+  --bg:#0E1A16; --surface:#15251F; --sunk:#1C3029; --fg:#E8EEE9; --muted:#A3B3AC; --line:#26403A;
+  --accent:#DCE9E1; --accent-fg:#15302A; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0D1424; --surface:#151F36; --sunk:#1C2844; --fg:#ECE7DD; --muted:#A2A9B9; --line:#26324F;
-  --accent:#EFE8DC; --accent-fg:#14213D; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}
+  --bg:#0E1A16; --surface:#15251F; --sunk:#1C3029; --fg:#E8EEE9; --muted:#A3B3AC; --line:#26403A;
+  --accent:#DCE9E1; --accent-fg:#15302A; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:24px 64px;display:grid;gap:22px}
@@ -95,7 +95,7 @@ a.pill{text-decoration:none}
 <div class="wrap">
   <header>
     <div>
-      <h1>Hyperscout Italia Books</h1>
+      <h1>Hyperscout Italia Books <span style="font-size:.6em;font-weight:500;color:var(--muted)">S.r.l. · Taranto</span></h1>
       <div class="sub">Hyperscout Italia S.r.l., Taranto · bookkeeping for Rita (New Service) · <span id="lastRun">last run: loading</span></div>
     </div>
     <div class="controls">
