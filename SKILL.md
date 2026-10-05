@@ -50,6 +50,10 @@ Copy documents from Jan's old folder and mailboxes into the month folder; never 
 
 Gmail is Jan's personal mailbox: only pick up invoices that belong to Hyperscout. Ignore everything personal.
 
+## Jan's view
+
+Jan reads the books on the web page "Hyperscout Holding Books" (https://claude.ai/artifact/QavbZk2mRUsVtPgaH2UGEJ, source books.html in the repo). It reads the ledger live and writes only two things: notes in Boekingen!L and the KvK number in Instellingen!B7. Invoices he uploads there land in Inbox with names ending in `_ontbrekend`. Put this page link in every message to Jan, next to the books folder link. Keep the ledger layout stable: the page depends on the tab names and columns below.
+
 ## The ledger (Hyperscout Holding books ledger)
 
 Never write into columns that hold an ARRAYFORMULA (marked "formula" below), not even blanks. Write rows from the first empty row, in blocks that skip those columns. Dates as yyyy-mm-dd. Amounts as numbers in euro.

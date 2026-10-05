@@ -1,0 +1,382 @@
+<title>Hyperscout Holding Books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one column of working panels. Status strip first, then the to-do list, then BTW, result, bookings, folders. */
+:root{
+  --bg:#F7F5F1; --surface:#FFFFFF; --sunk:#EFE8DC; --fg:#14213D; --muted:#5D6375; --line:#E2DCD0;
+  --accent:#14213D; --accent-fg:#FFFFFF; --red:#B8322A; --red-bg:#FBEAE8; --amber:#9A6412; --amber-bg:#FBF1DE; --green:#2E7A4C; --green-bg:#E5F3EA;
+  --display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif; --body:"DM Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1424; --surface:#151F36; --sunk:#1C2844; --fg:#ECE7DD; --muted:#A2A9B9; --line:#26324F;
+  --accent:#EFE8DC; --accent-fg:#14213D; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1424; --surface:#151F36; --sunk:#1C2844; --fg:#ECE7DD; --muted:#A2A9B9; --line:#26324F;
+  --accent:#EFE8DC; --accent-fg:#14213D; --red:#F2786C; --red-bg:#3A1F25; --amber:#E9AE52; --amber-bg:#3A2E1A; --green:#6CC892; --green-bg:#173327; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:24px 64px;display:grid;gap:22px}
+h1,h2{font-family:var(--display);font-weight:600;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:1.75rem}
+h2{font-size:1.1rem}
+a{color:inherit}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px}
+header .sub{color:var(--muted);font-size:.9rem;margin-top:2px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn,select{font:inherit;font-size:.88rem;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.btn:hover,select:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--accent);color:var(--accent-fg);border-radius:14px;overflow:hidden}
+.strip>div{padding:16px 18px;border-left:1px solid color-mix(in srgb,var(--accent-fg) 18%,transparent);min-width:0}
+.strip>div:first-child{border-left:0}
+.strip .lbl{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
+.strip .val{font-family:var(--display);font-size:1.55rem;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.strip .hint{font-size:.8rem;opacity:.8;margin-top:2px}
+@media (max-width:760px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.strip>div:nth-child(3){border-left:0}.strip>div:nth-child(n+3){border-top:1px solid color-mix(in srgb,var(--accent-fg) 18%,transparent)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 14px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:22px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.red{background:var(--red-bg);color:var(--red)} .pill.amber{background:var(--amber-bg);color:var(--amber)} .pill.green{background:var(--green-bg);color:var(--green)} .pill.grey{background:var(--sunk);color:var(--muted)}
+.todo{display:grid;gap:10px}
+.item{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:12px 14px;display:grid;gap:10px;min-width:0}
+.item.amber{border-left-color:var(--amber)}
+.item .top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:baseline}
+.item .who{font-weight:600;overflow-wrap:anywhere}
+.item .amt{font-family:var(--display);font-weight:600}
+.item .act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.item input[type=text]{flex:1 1 220px;min-width:0;font:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.file-label{position:relative}
+.file-label input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.status{font-size:.82rem;color:var(--muted)}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
+.box{font-family:var(--display);font-weight:600;color:var(--muted);width:2.6em}
+.months{display:flex;flex-wrap:wrap;gap:8px}
+.months a{font-family:var(--display);font-weight:500;border:1px solid var(--line);border-radius:8px;padding:6px 12px;text-decoration:none;background:var(--bg)}
+.months a:hover{border-color:var(--fg)}
+.kv{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:8px 14px;font-size:.92rem;align-items:center}
+.kv input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;max-width:240px}
+.banner{border-radius:10px;padding:12px 14px;background:var(--amber-bg);color:var(--fg);border:1px solid var(--line)}
+.banner.err{background:var(--red-bg)}
+.sec-err{font-size:.86rem;color:var(--red)}
+.skeleton{color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:no-preference){.btn,.months a{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Hyperscout Holding Books</h1>
+      <div class="sub">Hyperscout Holding B.V., Den Haag · bookkeeping for Serdal · <span id="lastRun">last run: loading</span></div>
+    </div>
+    <div class="controls">
+      <label class="small muted" for="quarter">Quarter</label>
+      <select id="quarter" aria-label="Quarter"></select>
+      <a class="btn" href="https://drive.google.com/drive/folders/1TcJNIfw5Ybe29HD_C4G95poffgnAVH5u" target="_blank" rel="noopener">All documents ↗</a>
+      <button class="btn" id="refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <div id="pageMsg" hidden></div>
+
+  <section class="strip" aria-label="Summary">
+    <div><div class="lbl" id="btwLbl">BTW this quarter</div><div class="val" id="kBtw">–</div><div class="hint" id="kBtwHint">to pay (+) or get back (−)</div></div>
+    <div><div class="lbl">Deadline</div><div class="val" id="kDue">–</div><div class="hint" id="kDueHint">return and payment</div></div>
+    <div><div class="lbl">Missing invoices</div><div class="val" id="kMiss">–</div><div class="hint" id="kMissHint">&nbsp;</div></div>
+    <div><div class="lbl">Owed to you (Amex)</div><div class="val" id="kAmex">–</div><div class="hint">prepaid costs, not yet repaid</div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="todoH">
+    <div class="panel-head">
+      <h2 id="todoH">For you to fill in</h2>
+      <span class="small muted">Upload the invoice, or leave a note for the bookkeeper. Both are picked up on the next run.</span>
+    </div>
+    <div class="todo" id="todo"><div class="skeleton">Loading the books…</div></div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="btwH">
+      <div class="panel-head"><h2 id="btwH">BTW return</h2><span class="small muted" id="btwQ"></span></div>
+      <div class="tbl-wrap"><table id="btwTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
+      <div class="small muted">Counted on invoice date, from the invoices in the books. Serdal files the return.</div>
+    </section>
+    <section class="panel" aria-labelledby="resH">
+      <div class="panel-head"><h2 id="resH">Result</h2><span class="small muted">net of BTW</span></div>
+      <div class="tbl-wrap"><table id="resTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
+      <div class="small muted">Bookkeeping view only. The official figures come from Serdal.</div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="bkH">
+    <div class="panel-head">
+      <h2 id="bkH">Bookings</h2>
+      <select id="month" aria-label="Month"></select>
+    </div>
+    <div class="tbl-wrap"><table id="bkTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="mH">
+      <h2 id="mH">Month folders</h2>
+      <div class="months" id="months"><span class="skeleton">Loading…</span></div>
+      <div class="small muted">Each month holds Bank, Amex, Inkoop, Verkoop and Rapporten. Drop new statements and invoices in the <a href="https://drive.google.com/drive/folders/1JHihwK8HiVOlFSf6l6fwg1KZgzGtW_0H" target="_blank" rel="noopener">Inbox</a>.</div>
+    </section>
+    <section class="panel" aria-labelledby="cH">
+      <h2 id="cH">Company details</h2>
+      <div class="kv" id="company"><span class="skeleton">Loading…</span></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const SHEET = "1-LHvR11t71ykKXCkyJd6b6NcsFYfKYHPo94Xu8PmMck";
+const INBOX = "1JHihwK8HiVOlFSf6l6fwg1KZgzGtW_0H";
+const SHEETS = "Google Sheets", DRIVE = "Google Drive";
+const RANGES = {
+  boek: "Boekingen!A1:L", fin: "'Facturen in'!A1:T", fuit: "'Facturen uit'!A1:R",
+  btw: "'BTW per kwartaal'!A1:I18", mappen: "Mappen!A1:B", inst: "Instellingen!A1:C16",
+  amex: "'Amex declaraties'!A3:B6", log: "'Run log'!A1:G"
+};
+const S = { data: {}, errs: {}, mcp: null, fileArgs: false };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function num(s){ if (s==null) return 0; s=String(s).trim(); if (!s||s==="-") return 0;
+  const neg = /^[(\-−]/.test(s); const v = parseFloat(s.replace(/[^0-9.]/g,"")); return isNaN(v)?0:(neg?-v:v); }
+function eur(v){ if (Math.abs(v)<0.005) return "–"; const t="€ "+Math.abs(v).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2}); return v<0?"(" + t + ")":t; }
+function eur0(v){ const t="€ "+Math.abs(v).toLocaleString("en-GB",{maximumFractionDigits:0}); return Math.abs(v)<0.5?"€ 0":(v<0?"−"+t:t); }
+const qOf = d => d ? `${d.slice(0,4)}-Q${Math.floor((+d.slice(5,7)-1)/3)+1}` : "";
+function qMonths(q){ const y=q.slice(0,4), n=+q.slice(-1); return [1,2,3].map(i=>`${y}-${String((n-1)*3+i).padStart(2,"0")}`); }
+function deadline(q){ const y=+q.slice(0,4), n=+q.slice(-1); return new Date(y, n*3+1, 0); }
+function defaultQuarter(){ const t=new Date(); const m=t.getMonth()+1, y=t.getFullYear(), n=Math.floor((m-1)/3)+1;
+  if ((m-1)%3===0) return n===1?`${y-1}-Q4`:`${y}-Q${n-1}`; return `${y}-Q${n}`; }
+const rows = (k,w) => (S.data[k]||[]).slice(1).map((r,i)=>({r:(r.concat(Array(w).fill(""))).slice(0,w), row:i+2})).filter(x=>x.r[0]);
+
+function errText(e, server){
+  const s = server || e?.server || "the connector";
+  switch (e?.code){
+    case "needs_reauth": return `${s} needs to be reconnected. Reconnect it in claude.ai Settings → Connectors, then press Refresh.`;
+    case "server_not_connected": case "selection_required": return `${s} is not connected for this page. Add it in claude.ai Settings → Connectors, then press Refresh.`;
+    case "not_in_manifest": return `${s} is turned off for this page. Allow it from the page's permissions, then press Refresh.`;
+    case "blocked_by_policy": case "approval_required": return `Your organization blocks this ${s} action here.`;
+    case "server_unavailable": case "rate_limited": return `${s} did not answer just now. Press Refresh in a moment.`;
+    case "tool_error": return `${s} refused the request: ${e.message || "no detail given"}.`;
+    default: return `${s} could not be reached (${e?.code || "unknown"}). Press Refresh to try again.`;
+  }
+}
+
+async function load(){
+  $("refresh").disabled = true;
+  const keys = Object.keys(RANGES);
+  await Promise.all(keys.map(async k => {
+    try {
+      const res = await S.mcp.callTool(SHEETS, "get_values", {spreadsheetId: SHEET, range: RANGES[k]}, {cache:false});
+      S.data[k] = (res.payload && res.payload.values) || []; delete S.errs[k];
+    } catch(e){ S.errs[k] = e; }
+  }));
+  $("refresh").disabled = false;
+  const errs = Object.values(S.errs);
+  if (errs.length === keys.length){
+    showPage(errText(errs[0], SHEETS), true);
+  } else hidePage();
+  render();
+}
+function showPage(t, isErr){ const m=$("pageMsg"); m.className="banner"+(isErr?" err":""); m.textContent=t; m.hidden=false; }
+function hidePage(){ $("pageMsg").hidden = true; }
+
+function render(){
+  // quarters
+  const qs = ((S.data.btw||[])[1]||[]).slice(1).filter(Boolean);
+  const sel = $("quarter"); const cur = sel.value || defaultQuarter();
+  if (qs.length){ sel.innerHTML = qs.map(q=>`<option ${q===cur?"selected":""}>${esc(q)}</option>`).join(""); }
+  const q = sel.value || cur;
+  renderStrip(q); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
+}
+
+function btwCol(q){ const hdr=((S.data.btw||[])[1]||[]); return hdr.indexOf(q); }
+function btwVal(q, rowIdx){ const c=btwCol(q); if (c<1) return 0; return num(((S.data.btw||[])[rowIdx]||[])[c]); }
+
+function renderStrip(q){
+  if (S.errs.btw){ $("kBtw").textContent="–"; $("kBtwHint").textContent="could not load"; }
+  else { const t=btwVal(q,14); $("kBtw").textContent=eur0(t); $("kBtwHint").textContent = t>0.5?"to pay":t<-0.5?"to get back":"nothing to pay yet"; }
+  $("btwLbl").textContent = `BTW ${q}`;
+  const d=deadline(q), days=Math.ceil((d - new Date(new Date().toDateString()))/864e5);
+  $("kDue").textContent = d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+  $("kDueHint").textContent = days<0?`${-days} days ago`:days===0?"today":`${days} days left`;
+  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt");
+  $("kMiss").textContent = S.errs.boek?"–":String(miss.length);
+  $("kMissHint").textContent = miss.length? eur0(-miss.reduce((a,x)=>a+num(x.r[5]),0))+" without invoice" : "all bookings have an invoice";
+  const owed = (S.data.amex||[]).find(r=>/Nog te betalen/.test(r[0]||""));
+  $("kAmex").textContent = S.errs.amex?"–":eur0(num(owed&&owed[1]));
+}
+
+function renderTodo(){
+  const box=$("todo");
+  if (S.errs.boek){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</div>`; return; }
+  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt").sort((a,b)=>a.r[0]<b.r[0]?-1:1);
+  const notHs = rows("fin",20).filter(x=>x.r[4]==="Nee");
+  const late = rows("fuit",18).filter(x=>x.r[12]==="Te laat");
+  const kvk = ((S.data.inst||[]).find(r=>r[0]==="KvK-nummer")||[])[1];
+  let html = "";
+  if (!kvk) html += `<div class="item amber"><div class="top"><span class="who">KvK number missing</span><span class="pill amber">Company details</span></div><div class="small muted">Needed on every invoice and for Serdal. Fill it in under Company details below.</div></div>`;
+  html += miss.map(x=>{ const r=x.r; return `
+    <div class="item" data-row="${x.row}">
+      <div class="top"><span class="who">${esc(r[3]||"Unknown counterparty")}</span><span class="amt num">${eur(num(r[5]))}</span></div>
+      <div class="small muted">${esc(r[0])} · ${esc(r[1])}${r[4]?" · "+esc(r[4]):""} <span class="pill red">invoice missing</span></div>
+      <div class="act">
+        <input type="text" id="note-${x.row}" placeholder="Note, e.g. personal cost, or where the invoice is" value="${esc(r[11])}" aria-label="Note for ${esc(r[3])}">
+        <button class="btn" type="button" data-act="note">Save note</button>
+        <span class="btn file-label">Upload invoice<input type="file" id="file-${x.row}" accept=".pdf,image/*" data-act="file" aria-label="Upload invoice for ${esc(r[3])}"></span>
+      </div>
+      <div class="status" id="st-${x.row}" aria-live="polite"></div>
+    </div>`; }).join("");
+  html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in Hyperscout's name</span><span class="amt num">${eur(num(r[7]))} BTW</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask the supplier for a corrected invoice addressed to Hyperscout Holding B.V., or this BTW cannot be reclaimed.</div></div>`; }).join("");
+  html += late.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: payment overdue</span><span class="amt num">${eur(num(r[8]))}</span></div><div class="small muted">Invoice ${esc(r[1])}, due ${esc(r[10])}.</div></div>`; }).join("");
+  box.innerHTML = html || `<div class="empty">Nothing to fill in. Once bank statements are booked, any payment without an invoice shows up here.</div>`;
+}
+
+function renderBtw(q){
+  const t=$("btwTbl"); $("btwQ").textContent = q;
+  if (S.errs.btw){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.btw,SHEETS))}</td></tr></tbody>`; return; }
+  const L=[["1a","Sales at 21%",2,3],["1b","Sales at 9%",4,5],["3a","Goods exported outside the EU",6,null],["3b","Services to EU businesses (ICP)",7,null],
+           ["4a","Services bought outside the EU",8,9],["4b","Services bought in the EU",10,11],["5a","BTW owed",null,12],["5b","BTW you can deduct",null,13]];
+  let h=`<thead><tr><th>Box</th><th></th><th class="r">Base</th><th class="r">BTW</th></tr></thead><tbody>`;
+  for (const [b,l,bi,vi] of L) h+=`<tr><td class="box">${b}</td><td>${l}</td><td class="r">${bi==null?"":eur(btwVal(q,bi))}</td><td class="r">${vi==null?"":eur(btwVal(q,vi))}</td></tr>`;
+  const tot=btwVal(q,14);
+  h+=`<tr class="total"><td></td><td>${tot>0.005?"To pay":tot<-0.005?"To get back":"Balance"}</td><td></td><td class="r">${eur(Math.abs(tot))}</td></tr></tbody>`;
+  const non=btwVal(q,16); if (non) h+=`<tfoot><tr><td></td><td class="small muted" colspan="2">Services to customers outside the EU (not in the return)</td><td class="r small">${eur(non)}</td></tr></tfoot>`;
+  t.innerHTML=h;
+}
+
+function renderResult(q){
+  const t=$("resTbl");
+  if (S.errs.fin||S.errs.fuit){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.fin||S.errs.fuit,SHEETS))}</td></tr></tbody>`; return; }
+  const ms=qMonths(q), y=q.slice(0,4), last=ms[2];
+  const inQ=d=>ms.includes(d.slice(0,7)), ytd=d=>d.slice(0,4)===y && d.slice(0,7)<=last;
+  const sum=(arr,col,f)=>arr.filter(x=>f(x.r[0])).reduce((a,x)=>a+num(x.r[col]),0);
+  const fin=rows("fin",20), fuit=rows("fuit",18), bk=rows("boek",12).filter(x=>["Bankkosten","Rente"].includes(x.r[6]));
+  const R=[["Revenue",sum(fuit,5,inQ),sum(fuit,5,ytd)],["Costs with an invoice",-sum(fin,5,inQ),-sum(fin,5,ytd)],["Bank charges and interest",sum(bk,5,inQ),sum(bk,5,ytd)]];
+  const tq=R.reduce((a,r)=>a+r[1],0), ty=R.reduce((a,r)=>a+r[2],0);
+  t.innerHTML=`<thead><tr><th></th><th class="r">${esc(q)}</th><th class="r">${y} to date</th></tr></thead><tbody>`+
+    R.map(r=>`<tr><td>${r[0]}</td><td class="r">${eur(r[1])}</td><td class="r">${eur(r[2])}</td></tr>`).join("")+
+    `<tr class="total"><td>Result</td><td class="r">${eur(tq)}</td><td class="r">${eur(ty)}</td></tr></tbody>`;
+}
+
+function renderBookings(){
+  const t=$("bkTbl"), msel=$("month");
+  if (S.errs.boek){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</td></tr></tbody>`; return; }
+  const all=rows("boek",12); const months=[...new Set(all.map(x=>x.r[0].slice(0,7)))].sort().reverse();
+  const cur=msel.value;
+  msel.innerHTML=`<option value="">All months</option>`+months.map(m=>`<option ${m===cur?"selected":""}>${m}</option>`).join("");
+  const list=all.filter(x=>!msel.value||x.r[0].startsWith(msel.value)).sort((a,b)=>a.r[0]<b.r[0]?1:-1);
+  if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No bookings yet. Drop the Wise statements (CSV) in the Inbox and ask Claude to book them.</td></tr></tbody>`; return; }
+  const pill=s=>s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:`<span class="pill grey">no invoice needed</span>`;
+  t.innerHTML=`<thead><tr><th>Date</th><th>Source</th><th>Counterparty</th><th>Account</th><th class="r">Amount</th><th>Invoice</th></tr></thead><tbody>`+
+    list.map(x=>{const r=x.r;return `<tr><td class="num">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[3])}<div class="small muted">${esc(r[4])}</div></td><td class="small">${esc(r[6])}</td><td class="r">${eur(num(r[5]))}</td><td>${pill(r[8])}</td></tr>`}).join("")+`</tbody>`;
+}
+
+function renderMonths(){
+  const el=$("months");
+  if (S.errs.mappen){ el.innerHTML=`<span class="sec-err">${esc(errText(S.errs.mappen,SHEETS))}</span>`; return; }
+  const ms=(S.data.mappen||[]).slice(1).filter(r=>r[0]&&r[1]);
+  el.innerHTML = ms.length? ms.map(r=>`<a href="https://drive.google.com/drive/folders/${encodeURIComponent(r[1])}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join("") : `<span class="muted">No month folders yet.</span>`;
+}
+
+function renderCompany(){
+  const el=$("company");
+  if (S.errs.inst){ el.innerHTML=`<span class="sec-err">${esc(errText(S.errs.inst,SHEETS))}</span>`; return; }
+  const get=k=>((S.data.inst||[]).find(r=>r[0]===k)||[])[1]||"";
+  const kvk=get("KvK-nummer");
+  el.innerHTML=`<span class="muted">Company</span><span>${esc(get("Bedrijf"))}</span>
+    <span class="muted">RSIN</span><span class="num">${esc(get("Fiscaal nummer (RSIN)"))}</span>
+    <span class="muted">BTW id</span><span class="num">${esc(get("Btw-id"))}</span>
+    <label class="muted" for="kvk">KvK number</label>
+    <span style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><input id="kvk" type="text" inputmode="numeric" value="${esc(kvk)}" placeholder="8 digits"><button class="btn" type="button" id="kvkSave">Save</button><span class="status" id="kvkSt" aria-live="polite"></span></span>
+    <span class="muted">Accountant</span><span>${esc(get("Accountant"))}</span>
+    <span class="muted">BTW filing</span><span>per quarter</span>`;
+  $("kvkSave").onclick = saveKvk;
+}
+
+function renderLastRun(){
+  const lg=(S.data.log||[]).slice(1).filter(r=>r[0]); const l=lg[lg.length-1];
+  $("lastRun").textContent = S.errs.log? "last run: unknown" : l? `last run: ${l[0]} (${l[1]} ${l[2]||""})` : "no bookkeeping run yet";
+}
+
+// ---------- actions (each only on a click)
+async function saveNote(row){
+  const inp=$("note-"+row), st=$("st-"+row); const v=inp.value.trim();
+  st.className="status"; st.textContent="Saving…";
+  try{
+    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!L${row}`,values:[[v?("Jan: "+v.replace(/^Jan:\s*/,"")):""]]});
+    st.className="status ok"; st.textContent="Saved. The bookkeeper reads it on the next run.";
+  }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
+}
+
+function toB64(buf){ let s=""; const b=new Uint8Array(buf); for (let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
+async function uploadInvoice(row, file){
+  const st=$("st-"+row); const item=(S.data.boek||[])[row-1]||[];
+  if (!file) return;
+  if (file.size > 15*1024*1024){ st.className="status err"; st.textContent="That file is larger than 15 MB. Save a smaller PDF and try again."; return; }
+  const safe=s=>String(s||"").replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"-");
+  const ext=(file.name.match(/\.[a-z0-9]+$/i)||[".pdf"])[0];
+  const title=`${item[0]||"onbekend"}_${safe(item[3])||"factuur"}_ontbrekend${ext}`;
+  st.className="status"; st.textContent=`Uploading ${file.name}…`;
+  try{
+    let content;
+    if (S.fileArgs){ content={$file:{data:file,name:title,type:file.type||"application/pdf"}}; }
+    else { if (file.size>700*1024){ st.className="status err"; st.textContent="This view can only send files up to 700 KB. Drop it in the Inbox folder instead."; return; } content=toB64(await file.arrayBuffer()); }
+    await S.mcp.callTool(DRIVE,"create_file",{title,parentId:INBOX,contentMimeType:file.type||"application/pdf",base64Content:content,disableConversionToGoogleType:true});
+    st.className="status ok"; st.textContent=`Uploaded to the Inbox as ${title}. It is booked on the next run.`;
+    try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!L${row}`,values:[[`Jan: factuur geüpload naar Inbox (${title})`]]}); $("note-"+row).value=`Jan: factuur geüpload naar Inbox (${title})`; }catch(_){}
+  }catch(e){ st.className="status err"; st.textContent = e?.code==="server_unavailable"||e?.code==="upstream_error" ? "No answer from Google Drive. Check the Inbox folder before uploading again, it may have arrived." : errText(e,DRIVE); }
+}
+
+async function saveKvk(){
+  const v=$("kvk").value.trim(), st=$("kvkSt");
+  if (v && !/^\d{8}$/.test(v)){ st.className="status err"; st.textContent="A KvK number has 8 digits."; return; }
+  st.className="status"; st.textContent="Saving…";
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:"Instellingen!B7",values:[[v?("'"+v):""]]});
+    st.className="status ok"; st.textContent="Saved."; const r=(S.data.inst||[]).find(r=>r[0]==="KvK-nummer"); if(r) r[1]=v; renderTodo();
+  }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
+}
+
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-act=note]"); if (!b||!S.mcp) return;
+  saveNote(b.closest(".item").dataset.row);
+});
+document.addEventListener("change", e=>{
+  if (e.target.matches("input[data-act=file]") && S.mcp){ uploadInvoice(e.target.closest(".item").dataset.row, e.target.files[0]); e.target.value=""; }
+  if (e.target.id==="quarter"){ render(); }
+  if (e.target.id==="month"){ renderBookings(); }
+});
+$("refresh").addEventListener("click", ()=>{ if (S.mcp) load(); });
+
+// quarter list before data arrives
+(function(){ const q=defaultQuarter(); $("quarter").innerHTML=`<option>${q}</option>`; })();
+
+(async ()=>{
+  const mcp = await (window.claude?.use ? window.claude.use("mcp") : Promise.resolve(null));
+  if (!mcp){
+    showPage("Live data is only available when you open this page in Claude while signed in. The books themselves are in Google Drive: use All documents.", false);
+    for (const id of ["todo"]) $(id).innerHTML=`<div class="empty">Open this page in Claude to see what needs filling in.</div>`;
+    return;
+  }
+  S.mcp = mcp;
+  try{ const lt = await mcp.listTools(); S.fileArgs = !!lt.fileArgs; }catch(_){ S.fileArgs=false; }
+  load();
+})();
+</script>
