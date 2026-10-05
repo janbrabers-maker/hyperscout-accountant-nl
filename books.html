@@ -97,13 +97,21 @@ tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
     <div><div class="lbl" id="btwLbl">BTW this quarter</div><div class="val" id="kBtw">–</div><div class="hint" id="kBtwHint">to pay (+) or get back (−)</div></div>
     <div><div class="lbl">Deadline</div><div class="val" id="kDue">–</div><div class="hint" id="kDueHint">return and payment</div></div>
     <div><div class="lbl">Missing invoices</div><div class="val" id="kMiss">–</div><div class="hint" id="kMissHint">&nbsp;</div></div>
-    <div><div class="lbl">Owed to you (Amex)</div><div class="val" id="kAmex">–</div><div class="hint">prepaid costs, not yet repaid</div></div>
+    <div><div class="lbl" id="kAmexLbl">Owed to you (Amex)</div><div class="val" id="kAmex">–</div><div class="hint" id="kAmexHint">prepaid costs, not yet repaid</div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="qH">
+    <div class="panel-head">
+      <h2 id="qH">Questions for you</h2>
+      <span class="small muted" id="qCount"></span>
+    </div>
+    <div class="todo" id="questions"><div class="skeleton">Loading…</div></div>
   </section>
 
   <section class="panel" aria-labelledby="todoH">
     <div class="panel-head">
-      <h2 id="todoH">For you to fill in</h2>
-      <span class="small muted">Upload the invoice, or leave a note for the bookkeeper. Both are picked up on the next run.</span>
+      <h2 id="todoH">Missing invoices</h2>
+      <span class="small muted">Per supplier. Upload the invoices or leave a note; both are picked up on the next run.</span>
     </div>
     <div class="todo" id="todo"><div class="skeleton">Loading the books…</div></div>
   </section>
@@ -115,9 +123,9 @@ tr.total td{font-weight:600;background:var(--sunk);border-bottom:0}
       <div class="small muted">Counted on invoice date, from the invoices in the books. Serdal files the return.</div>
     </section>
     <section class="panel" aria-labelledby="resH">
-      <div class="panel-head"><h2 id="resH">Result</h2><span class="small muted">net of BTW</span></div>
+      <div class="panel-head"><h2 id="resH">Result</h2><span class="small muted">revenue excl. BTW, costs as paid from Wise</span></div>
       <div class="tbl-wrap"><table id="resTbl"><tbody><tr><td class="skeleton">Loading…</td></tr></tbody></table></div>
-      <div class="small muted">Bookkeeping view only. The official figures come from Serdal.</div>
+      <div class="small muted">Costs are taken from the bank until the invoices are in, so they still include BTW. Amex costs are not in yet. The official figures come from Serdal.</div>
     </section>
   </div>
 
@@ -149,8 +157,9 @@ const SHEETS = "Google Sheets", DRIVE = "Google Drive";
 const RANGES = {
   boek: "Boekingen!A1:L", fin: "'Facturen in'!A1:T", fuit: "'Facturen uit'!A1:R",
   btw: "'BTW per kwartaal'!A1:I18", mappen: "Mappen!A1:B", inst: "Instellingen!A1:C16",
-  amex: "'Amex declaraties'!A3:B6", log: "'Run log'!A1:G"
+  amex: "'Amex declaraties'!A3:B6", log: "'Run log'!A1:G", vragen: "Vragen!A1:F"
 };
+const COST_ACCOUNTS = ["Inkoop data en diensten","Freelancers en externe ontwikkeling","Advies en juridisch","Accountant en administratie","Software en abonnementen","Beurzen en evenementen","Reiskosten","Hotel en verblijf","Representatie en maaltijden","Marketing","Verzekeringen","Bankkosten","Kantoor en huisvesting","Rente","Overige kosten","Management fee"];
 const S = { data: {}, errs: {}, mcp: null, fileArgs: false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -204,7 +213,7 @@ function render(){
   const sel = $("quarter"); const cur = sel.value || defaultQuarter();
   if (qs.length){ sel.innerHTML = qs.map(q=>`<option ${q===cur?"selected":""}>${esc(q)}</option>`).join(""); }
   const q = sel.value || cur;
-  renderStrip(q); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
+  renderStrip(q); renderQuestions(); renderTodo(); renderBtw(q); renderResult(q); renderBookings(); renderMonths(); renderCompany(); renderLastRun();
 }
 
 function btwCol(q){ const hdr=((S.data.btw||[])[1]||[]); return hdr.indexOf(q); }
@@ -220,33 +229,53 @@ function renderStrip(q){
   const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt");
   $("kMiss").textContent = S.errs.boek?"–":String(miss.length);
   $("kMissHint").textContent = miss.length? eur0(-miss.reduce((a,x)=>a+num(x.r[5]),0))+" without invoice" : "all bookings have an invoice";
-  const owed = (S.data.amex||[]).find(r=>/Nog te betalen/.test(r[0]||""));
-  $("kAmex").textContent = S.errs.amex?"–":eur0(num(owed&&owed[1]));
+  const all = rows("boek",12);
+  const amexBooked = all.some(x=>x.r[1]==="Amex");
+  const repaid = -all.filter(x=>x.r[1]==="Wise"&&x.r[6]==="R/C Jan Brabers").reduce((a,x)=>a+num(x.r[5]),0);
+  if (!amexBooked){ $("kAmex").textContent = S.errs.boek?"–":eur0(repaid); $("kAmexLbl").textContent="Amex repaid to you"; $("kAmexHint").textContent="this year; Amex statements not booked yet"; }
+  else { const owed=(S.data.amex||[]).find(r=>/Nog te betalen/.test(r[0]||"")); $("kAmex").textContent=eur0(num(owed&&owed[1])); $("kAmexLbl").textContent="Owed to you (Amex)"; $("kAmexHint").textContent="prepaid costs, not yet repaid"; }
+}
+
+function renderQuestions(){
+  const box=$("questions");
+  if (S.errs.vragen){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.vragen,SHEETS))}</div>`; return; }
+  const qs=(S.data.vragen||[]).slice(1).map((r,i)=>({r:(r.concat(Array(6).fill(""))).slice(0,6),row:i+2})).filter(x=>x.r[0]&&x.r[1]);
+  const open=qs.filter(x=>!x.r[3]), done=qs.filter(x=>x.r[3]);
+  $("qCount").textContent = qs.length? `${open.length} open, ${done.length} answered` : "";
+  let h = open.map(x=>`<div class="item amber" data-qrow="${x.row}">
+      <div class="top"><span class="who">${esc(x.r[1])}</span>${num(x.r[2])?`<span class="amt num">${eur(num(x.r[2]))}</span>`:""}</div>
+      <div class="act"><input type="text" id="ans-${x.row}" placeholder="Your answer" aria-label="Answer to question ${esc(x.r[0])}"><button class="btn primary" type="button" data-act="answer">Save answer</button></div>
+      <div class="status" id="qst-${x.row}" aria-live="polite"></div></div>`).join("");
+  if (done.length) h += `<details><summary class="small muted" style="cursor:pointer">Answered (${done.length})</summary><div class="todo" style="margin-top:10px">`+
+     done.map(x=>`<div class="item" style="border-left-color:var(--green)"><div class="small">${esc(x.r[1])}</div><div><strong>You:</strong> ${esc(x.r[3])}</div></div>`).join("")+`</div></details>`;
+  box.innerHTML = h || `<div class="empty">No open questions.</div>`;
 }
 
 function renderTodo(){
   const box=$("todo");
   if (S.errs.boek){ box.innerHTML=`<div class="sec-err">${esc(errText(S.errs.boek,SHEETS))}</div>`; return; }
-  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt").sort((a,b)=>a.r[0]<b.r[0]?-1:1);
+  const miss = rows("boek",12).filter(x=>x.r[8]==="Factuur ontbreekt");
+  const groups = {};
+  for (const x of miss){ const k=(x.r[6]==="Management fee")?"Brabers Tech (management fee)":x.r[3].trim(); (groups[k]=groups[k]||[]).push(x); }
+  S.groups = groups;
+  const list = Object.entries(groups).sort((a,b)=>a[1].reduce((s,x)=>s+num(x.r[5]),0)-b[1].reduce((s,x)=>s+num(x.r[5]),0));
   const notHs = rows("fin",20).filter(x=>x.r[4]==="Nee");
-  const late = rows("fuit",18).filter(x=>x.r[12]==="Te laat");
-  const kvk = ((S.data.inst||[]).find(r=>r[0]==="KvK-nummer")||[])[1];
-  let html = "";
-  if (!kvk) html += `<div class="item amber"><div class="top"><span class="who">KvK number missing</span><span class="pill amber">Company details</span></div><div class="small muted">Needed on every invoice and for Serdal. Fill it in under Company details below.</div></div>`;
-  html += miss.map(x=>{ const r=x.r; return `
-    <div class="item" data-row="${x.row}">
-      <div class="top"><span class="who">${esc(r[3]||"Unknown counterparty")}</span><span class="amt num">${eur(num(r[5]))}</span></div>
-      <div class="small muted">${esc(r[0])} · ${esc(r[1])}${r[4]?" · "+esc(r[4]):""} <span class="pill red">invoice missing</span></div>
+  let html = list.map(([name,xs],gi)=>{ const tot=xs.reduce((s,x)=>s+num(x.r[5]),0); xs.sort((a,b)=>a.r[0]<b.r[0]?-1:1);
+    const span = xs.length>1? `${xs[0].r[0]} to ${xs[xs.length-1].r[0]}` : xs[0].r[0];
+    return `<div class="item" data-g="${gi}">
+      <div class="top"><span class="who">${esc(name)}</span><span class="amt num">${eur(tot)}</span></div>
+      <div class="small muted">${xs.length} payment${xs.length>1?"s":""} · ${esc(span)} · ${esc(xs[0].r[6])}</div>
+      <details><summary class="small" style="cursor:pointer">Show payments</summary><div class="tbl-wrap"><table><tbody>${xs.map(x=>`<tr><td class="num">${esc(x.r[0])}</td><td>${esc(x.r[4])}</td><td class="r">${eur(num(x.r[5]))}</td></tr>`).join("")}</tbody></table></div></details>
       <div class="act">
-        <input type="text" id="note-${x.row}" placeholder="Note, e.g. personal cost, or where the invoice is" value="${esc(r[11])}" aria-label="Note for ${esc(r[3])}">
-        <button class="btn" type="button" data-act="note">Save note</button>
-        <span class="btn file-label">Upload invoice<input type="file" id="file-${x.row}" accept=".pdf,image/*" data-act="file" aria-label="Upload invoice for ${esc(r[3])}"></span>
+        <input type="text" id="gnote-${gi}" placeholder="Note, e.g. personal cost, or where the invoices are" aria-label="Note for ${esc(name)}">
+        <button class="btn" type="button" data-act="gnote">Save note</button>
+        <span class="btn file-label">Upload invoices<input type="file" multiple id="gfile-${gi}" accept=".pdf,image/*" data-act="gfile" aria-label="Upload invoices for ${esc(name)}"></span>
       </div>
-      <div class="status" id="st-${x.row}" aria-live="polite"></div>
+      <div class="status" id="gst-${gi}" aria-live="polite"></div>
     </div>`; }).join("");
-  html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in Hyperscout's name</span><span class="amt num">${eur(num(r[7]))} BTW</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask the supplier for a corrected invoice addressed to Hyperscout Holding B.V., or this BTW cannot be reclaimed.</div></div>`; }).join("");
-  html += late.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: payment overdue</span><span class="amt num">${eur(num(r[8]))}</span></div><div class="small muted">Invoice ${esc(r[1])}, due ${esc(r[10])}.</div></div>`; }).join("");
-  box.innerHTML = html || `<div class="empty">Nothing to fill in. Once bank statements are booked, any payment without an invoice shows up here.</div>`;
+  S.groupNames = list.map(([n])=>n);
+  html += notHs.map(x=>{ const r=x.r; return `<div class="item amber"><div class="top"><span class="who">${esc(r[2])}: invoice not in Hyperscout's name</span><span class="amt num">${eur(num(r[7]))} BTW</span></div><div class="small muted">${esc(r[0])} · invoice ${esc(r[1])}. Ask for a corrected invoice addressed to Hyperscout Holding B.V., or this BTW cannot be reclaimed.</div></div>`; }).join("");
+  box.innerHTML = html || `<div class="empty">Nothing missing. Every payment has its invoice.</div>`;
 }
 
 function renderBtw(q){
@@ -264,12 +293,15 @@ function renderBtw(q){
 
 function renderResult(q){
   const t=$("resTbl");
-  if (S.errs.fin||S.errs.fuit){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.fin||S.errs.fuit,SHEETS))}</td></tr></tbody>`; return; }
+  if (S.errs.fuit||S.errs.boek){ t.innerHTML=`<tbody><tr><td class="sec-err">${esc(errText(S.errs.fuit||S.errs.boek,SHEETS))}</td></tr></tbody>`; return; }
   const ms=qMonths(q), y=q.slice(0,4), last=ms[2];
   const inQ=d=>ms.includes(d.slice(0,7)), ytd=d=>d.slice(0,4)===y && d.slice(0,7)<=last;
-  const sum=(arr,col,f)=>arr.filter(x=>f(x.r[0])).reduce((a,x)=>a+num(x.r[col]),0);
-  const fin=rows("fin",20), fuit=rows("fuit",18), bk=rows("boek",12).filter(x=>["Bankkosten","Rente"].includes(x.r[6]));
-  const R=[["Revenue",sum(fuit,5,inQ),sum(fuit,5,ytd)],["Costs with an invoice",-sum(fin,5,inQ),-sum(fin,5,ytd)],["Bank charges and interest",sum(bk,5,inQ),sum(bk,5,ytd)]];
+  const fuit=rows("fuit",18), bk=rows("boek",12);
+  const rev=f=>fuit.filter(x=>f(x.r[0])).reduce((a,x)=>a+num(x.r[5]),0);
+  const cost=(f,acc)=>bk.filter(x=>f(x.r[0])&&acc.includes(x.r[6])).reduce((a,x)=>a+num(x.r[5]),0);
+  const other=COST_ACCOUNTS.filter(a=>!["Management fee","Rente","Bankkosten"].includes(a));
+  const R=[["Revenue (invoiced)",rev(inQ),rev(ytd)],["Management fee",cost(inQ,["Management fee"]),cost(ytd,["Management fee"])],
+           ["Other costs paid",cost(inQ,other),cost(ytd,other)],["Interest and bank charges",cost(inQ,["Rente","Bankkosten"]),cost(ytd,["Rente","Bankkosten"])]];
   const tq=R.reduce((a,r)=>a+r[1],0), ty=R.reduce((a,r)=>a+r[2],0);
   t.innerHTML=`<thead><tr><th></th><th class="r">${esc(q)}</th><th class="r">${y} to date</th></tr></thead><tbody>`+
     R.map(r=>`<tr><td>${r[0]}</td><td class="r">${eur(r[1])}</td><td class="r">${eur(r[2])}</td></tr>`).join("")+
@@ -284,7 +316,7 @@ function renderBookings(){
   msel.innerHTML=`<option value="">All months</option>`+months.map(m=>`<option ${m===cur?"selected":""}>${m}</option>`).join("");
   const list=all.filter(x=>!msel.value||x.r[0].startsWith(msel.value)).sort((a,b)=>a.r[0]<b.r[0]?1:-1);
   if (!list.length){ t.innerHTML=`<tbody><tr><td class="empty">No bookings yet. Drop the Wise statements (CSV) in the Inbox and ask Claude to book them.</td></tr></tbody>`; return; }
-  const pill=s=>s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:`<span class="pill grey">no invoice needed</span>`;
+  const pill=s=>s==="Gematcht"?`<span class="pill green">invoice</span>`:s==="Factuur ontbreekt"?`<span class="pill red">missing</span>`:s==="Vraag"?`<span class="pill amber">question</span>`:s==="Eerder verwerkt"?`<span class="pill grey">filed by Serdal</span>`:`<span class="pill grey">no invoice needed</span>`;
   t.innerHTML=`<thead><tr><th>Date</th><th>Source</th><th>Counterparty</th><th>Account</th><th class="r">Amount</th><th>Invoice</th></tr></thead><tbody>`+
     list.map(x=>{const r=x.r;return `<tr><td class="num">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[3])}<div class="small muted">${esc(r[4])}</div></td><td class="small">${esc(r[6])}</td><td class="r">${eur(num(r[5]))}</td><td>${pill(r[8])}</td></tr>`}).join("")+`</tbody>`;
 }
@@ -317,32 +349,44 @@ function renderLastRun(){
 }
 
 // ---------- actions (each only on a click)
-async function saveNote(row){
-  const inp=$("note-"+row), st=$("st-"+row); const v=inp.value.trim();
+const today = () => new Date().toISOString().slice(0,10);
+async function addNote(who, text){
+  return S.mcp.callTool(SHEETS,"append_values",{spreadsheetId:SHEET,range:"'Notities Jan'!A:D",values:[["'"+today(),who,text,""]]});
+}
+async function saveAnswer(row){
+  const v=$("ans-"+row).value.trim(), st=$("qst-"+row); if (!v){ st.className="status err"; st.textContent="Type an answer first."; return; }
   st.className="status"; st.textContent="Saving…";
-  try{
-    await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!L${row}`,values:[[v?("Jan: "+v.replace(/^Jan:\s*/,"")):""]]});
-    st.className="status ok"; st.textContent="Saved. The bookkeeper reads it on the next run.";
+  try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Vragen!D${row}`,values:[[v]]});
+    st.className="status ok"; st.textContent="Saved. Used on the next run.";
+    const r=(S.data.vragen||[])[row-1]; if(r){ while(r.length<4) r.push(""); r[3]=v; } setTimeout(renderQuestions,1200);
   }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
 }
-
+async function saveGroupNote(gi){
+  const name=S.groupNames[gi], v=$("gnote-"+gi).value.trim(), st=$("gst-"+gi);
+  if (!v){ st.className="status err"; st.textContent="Type a note first."; return; }
+  st.className="status"; st.textContent="Saving…";
+  try{ await addNote(name, v); st.className="status ok"; st.textContent="Saved. The bookkeeper reads it on the next run."; }
+  catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
+}
 function toB64(buf){ let s=""; const b=new Uint8Array(buf); for (let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
-async function uploadInvoice(row, file){
-  const st=$("st-"+row); const item=(S.data.boek||[])[row-1]||[];
-  if (!file) return;
-  if (file.size > 15*1024*1024){ st.className="status err"; st.textContent="That file is larger than 15 MB. Save a smaller PDF and try again."; return; }
+async function uploadGroup(gi, files){
+  const name=S.groupNames[gi], st=$("gst-"+gi); if (!files||!files.length) return;
   const safe=s=>String(s||"").replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"-");
-  const ext=(file.name.match(/\.[a-z0-9]+$/i)||[".pdf"])[0];
-  const title=`${item[0]||"onbekend"}_${safe(item[3])||"factuur"}_ontbrekend${ext}`;
-  st.className="status"; st.textContent=`Uploading ${file.name}…`;
-  try{
-    let content;
-    if (S.fileArgs){ content={$file:{data:file,name:title,type:file.type||"application/pdf"}}; }
-    else { if (file.size>700*1024){ st.className="status err"; st.textContent="This view can only send files up to 700 KB. Drop it in the Inbox folder instead."; return; } content=toB64(await file.arrayBuffer()); }
-    await S.mcp.callTool(DRIVE,"create_file",{title,parentId:INBOX,contentMimeType:file.type||"application/pdf",base64Content:content,disableConversionToGoogleType:true});
-    st.className="status ok"; st.textContent=`Uploaded to the Inbox as ${title}. It is booked on the next run.`;
-    try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:`Boekingen!L${row}`,values:[[`Jan: factuur geüpload naar Inbox (${title})`]]}); $("note-"+row).value=`Jan: factuur geüpload naar Inbox (${title})`; }catch(_){}
-  }catch(e){ st.className="status err"; st.textContent = e?.code==="server_unavailable"||e?.code==="upstream_error" ? "No answer from Google Drive. Check the Inbox folder before uploading again, it may have arrived." : errText(e,DRIVE); }
+  const done=[];
+  for (const file of files){
+    if (file.size > 15*1024*1024){ st.className="status err"; st.textContent=`${file.name} is larger than 15 MB. Save a smaller PDF and try again.`; continue; }
+    const title=`${today()}_${safe(name)}_ontbrekend_${safe(file.name)}`;
+    st.className="status"; st.textContent=`Uploading ${file.name}…`;
+    try{
+      let content;
+      if (S.fileArgs) content={$file:{data:file,name:title,type:file.type||"application/pdf"}};
+      else { if (file.size>700*1024){ st.className="status err"; st.textContent=`${file.name}: this view can only send files up to 700 KB. Drop it in the Inbox folder instead.`; continue; } content=toB64(await file.arrayBuffer()); }
+      await S.mcp.callTool(DRIVE,"create_file",{title,parentId:INBOX,contentMimeType:file.type||"application/pdf",base64Content:content,disableConversionToGoogleType:true});
+      done.push(title);
+    }catch(e){ st.className="status err"; st.textContent = (e?.code==="server_unavailable"||e?.code==="upstream_error") ? `No answer from Google Drive for ${file.name}. Check the Inbox before uploading again, it may have arrived.` : errText(e,DRIVE); }
+  }
+  if (done.length){ st.className="status ok"; st.textContent=`Uploaded ${done.length} file${done.length>1?"s":""} to the Inbox. Booked on the next run.`;
+    try{ await addNote(name, "Geüpload naar Inbox: "+done.join(", ")); }catch(_){} }
 }
 
 async function saveKvk(){
@@ -350,16 +394,17 @@ async function saveKvk(){
   if (v && !/^\d{8}$/.test(v)){ st.className="status err"; st.textContent="A KvK number has 8 digits."; return; }
   st.className="status"; st.textContent="Saving…";
   try{ await S.mcp.callTool(SHEETS,"update_values",{spreadsheetId:SHEET,range:"Instellingen!B7",values:[[v?("'"+v):""]]});
-    st.className="status ok"; st.textContent="Saved."; const r=(S.data.inst||[]).find(r=>r[0]==="KvK-nummer"); if(r) r[1]=v; renderTodo();
+    st.className="status ok"; st.textContent="Saved."; const r=(S.data.inst||[]).find(r=>r[0]==="KvK-nummer"); if(r) r[1]=v;
   }catch(e){ st.className="status err"; st.textContent=errText(e,SHEETS); }
 }
 
 document.addEventListener("click", e=>{
-  const b=e.target.closest("[data-act=note]"); if (!b||!S.mcp) return;
-  saveNote(b.closest(".item").dataset.row);
+  if (!S.mcp) return;
+  const a=e.target.closest("[data-act=answer]"); if (a) return saveAnswer(a.closest("[data-qrow]").dataset.qrow);
+  const g=e.target.closest("[data-act=gnote]"); if (g) return saveGroupNote(g.closest("[data-g]").dataset.g);
 });
 document.addEventListener("change", e=>{
-  if (e.target.matches("input[data-act=file]") && S.mcp){ uploadInvoice(e.target.closest(".item").dataset.row, e.target.files[0]); e.target.value=""; }
+  if (e.target.matches("input[data-act=gfile]") && S.mcp){ uploadGroup(e.target.closest("[data-g]").dataset.g, [...e.target.files]); e.target.value=""; }
   if (e.target.id==="quarter"){ render(); }
   if (e.target.id==="month"){ renderBookings(); }
 });
